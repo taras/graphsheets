@@ -2,9 +2,16 @@
   "name": "sheetsql",
   "version": "0.1.0",
   "description": "GraphQL interface for Google Sheets API",
-  "main": "index.js",
+  "engines": {
+    "node": ">=7.4"
+  },
+  "main": "dist/index.js",
   "scripts": {
-    "test": "jest"
+    "pretest": "npm run compile",
+    "test": "jest",
+    "compile": "tsc",
+    "prepublish": "npm run compile",
+    "precommit": "lint-staged"
   },
   "repository": {
     "type": "git",
@@ -16,9 +23,21 @@
     "spreadsheets"
   ],
   "author": "Taras Mankovski <tarasm@gmail.com>",
-  "license": "ISC",
+  "license": "MIT",
   "bugs": {
     "url": "https://github.com/this-dot/sheetsql/issues"
   },
-  "homepage": "https://github.com/this-dot/sheetsql#readme"
+  "homepage": "https://github.com/this-dot/sheetsql#readme",
+  "devDependencies": {
+    "@types/node": "^8.0.2",
+    "jest": "^20.0.4",
+    "prettier": "^1.4.4",
+    "typescript": "^2.3.4"
+  },
+  "lint-staged": {
+    "**/*.ts": [
+      "prettier --write",
+      "git add"
+    ]
+  }
 }
