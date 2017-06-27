@@ -35,9 +35,9 @@ export default asyncCommand({
 
       let { spreadsheetUrl, spreadsheetId } = sheet;
 
-      writeJSONSync(path.join(process.cwd(), "sheets.json"), {
-        spreadsheetUrl,
-        spreadsheetId
+      writeJSONSync(path.join(process.cwd(), "spreadsheet.json"), {
+        url: spreadsheetUrl,
+        id: spreadsheetId
       });
     } else {
       console.error(
