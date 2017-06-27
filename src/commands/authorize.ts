@@ -16,43 +16,22 @@ export default asyncCommand({
     }
   },
   async handler(argv) {
-    let { readOnly, tokenPath, clientSecretPath, verbose } = argv;
+    let { readOnly, tokenPath, clientSecretPath } = argv;
 
-    let credentials;
-    try {
-      credentials = await readJSON(clientSecretPath);
-    } catch (e) {
-      console.error(`Could not read client_secret.json at ${clientSecretPath}`);
-      throw e;
-    }
+    let authorizer = GoogleAuthorizer.restore(clientSecretPath, tokenPath);
 
-    let authorizer = new GoogleAuthorizer(credentials);
-
-    let token;
-    try {
-      token = await readJSON(tokenPath);
-    } catch (e) {
-      console.error(`Count not read token file at ${tokenPath}`);
-    }
-
-    if (token) {
-      console.info(`Retrieved a token and stored it in ${tokenPath}`);
+    if (authorizer.isAuthorized) {
+      console.info(`Retrieved a token from ${tokenPath}`);
     } else {
-      let scope = getScope(readOnly);
-      let authUrl = authorizer.generateAuthUrl(scope);
+      let authUrl = authorizer.generateAuthUrl(readOnly);
 
       console.info(`Authorize this app going to: ${authUrl}`);
       let code = await ask("Enter the code from that page here: ");
 
-      try {
-        token = await authorizer.getToken(code);
-      } catch (e) {
-        console.error(`Count not fetch token with code: ${code}`);
-        throw e;
-      }
+      let credentials = authorizer.authorize(code);
 
       try {
-        storeToken(tokenPath, token);
+        storeToken(tokenPath, credentials);
         console.info(`Saved token to ${tokenPath}`);
       } catch (e) {
         console.error(`Could not write token to ${tokenPath}`);
@@ -64,15 +43,6 @@ export default asyncCommand({
   }
 });
 
-function getScope(readOnly): [string] {
-  let base = "https://www.googleapis.com/auth/spreadsheets";
-  if (readOnly) {
-    return [`${base}.readonly`];
-  } else {
-    return [base];
-  }
-}
-
 function storeToken(tokenPath: string, token: {}) {
   try {
     fs.mkdirSync(path.dirname(tokenPath));
@@ -82,8 +52,4 @@ function storeToken(tokenPath: string, token: {}) {
     }
   }
   fs.writeFileSync(tokenPath, JSON.stringify(token));
-}
-
-async function readJSON(filePath) {
-  return JSON.parse(await fs.readFile(filePath, "utf8"));
 }

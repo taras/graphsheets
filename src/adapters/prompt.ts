@@ -6,12 +6,10 @@ export async function ask(question) {
     output: process.stdout
   });
   
-  let promise = new Promise((resolve) => {
+  return new Promise((resolve) => {
     rl.question(question, (answer: string) => {
       rl.close();
       resolve(answer);
     });
   });
-
-  return await promise;
 }
