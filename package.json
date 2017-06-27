@@ -5,6 +5,9 @@
   "engines": {
     "node": ">=7.4"
   },
+  "bin": {
+    "sheetsql": "./bin/cli"
+  },
   "main": "dist/index.js",
   "scripts": {
     "pretest": "npm run compile",
@@ -29,7 +32,10 @@
   },
   "homepage": "https://github.com/this-dot/sheetsql#readme",
   "devDependencies": {
+    "@types/commander": "^2.9.1",
+    "@types/fs-extra": "^3.0.3",
     "@types/node": "^8.0.2",
+    "@types/yargs": "^6.6.0",
     "jest": "^20.0.4",
     "prettier": "^1.4.4",
     "typescript": "^2.3.4"
@@ -39,5 +45,12 @@
       "prettier --write",
       "git add"
     ]
+  },
+  "dependencies": {
+    "fs-extra": "^3.0.1",
+    "google-auth-library": "^0.10.0",
+    "googleapis": "^19.0.0",
+    "heimdalljs-logger": "^0.1.9",
+    "yargs": "^8.0.2"    
   }
 }

@@ -44,9 +44,17 @@ This should create a spreadsheet that has 2 Sheets
 * [Proposal: Serial fields (nested mutations)](https://github.com/facebook/graphql/issues/252)
 * [Awesome GraphQL](https://github.com/apollographql/launchpad)
 * [Apollo GraphQL Starwars Server](https://github.com/apollographql/starwars-server)
+* [GraphQL Schemas and Types](http://graphql.org/learn/schema/)
+
+### Apollo
+
+* [graphql-tools](https://github.com/apollographql/graphql-tools)
+* [Apollo Resolvers](http://dev.apollodata.com/tools/graphql-tools/resolvers.html)
+* [Apollo Server](http://dev.apollodata.com/tools/graphql-server/index.html)
 
 ### Google Sheets
 
+* [SheetsDB Example Sheet](https://docs.google.com/spreadsheets/d/1kjeHcZKwW5aWc9MPbyBiy3ByVgHdkDi-H3ihuBKmEPQ/edit?usp=sharing)
 * [Google Visualization Query Language](https://developers.google.com/chart/interactive/docs/querylanguage)
 * [Google Sheets Functions Reference](https://support.google.com/docs/table/25273)
 * [How to use ranges in WHERE clause of a QUERY function?](https://productforums.google.com/forum/#!msg/docs/jPxLfG09L-g/J_7zjppUK7UJ)
@@ -56,5 +64,10 @@ This should create a spreadsheet that has 2 Sheets
 ### Deployment
 
 * [Express.js on Cloud Functions for Firebase](https://codeburst.io/express-js-on-cloud-functions-for-firebase-86ed26f9144c)
-* [GraphQL Server](http://dev.apollodata.com/tools/graphql-server/index.html)
-* [GraphQL Schemas and Types](http://graphql.org/learn/schema/)
+* [GraphQL Server Documentation](http://dev.apollodata.com/tools/graphql-server/index.html)
+* [GraphQL Server Repo](https://github.com/apollographql/graphql-server)
+
+### Packages
+
+* [yargs](https://github.com/yargs/yargs) - CLI interface
+* [heimdalljs-logger](https://github.com/heimdalljs/heimdalljs-logger) - Logger

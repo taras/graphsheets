@@ -1,0 +1,10 @@
+#!/usr/bin/env node
+'use strict';
+
+const cli = require('../dist/cli').default;
+const pkg = require('../package');
+
+cli({
+  version: pkg.version,
+  cwd: process.cwd()
+});
