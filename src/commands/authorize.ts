@@ -1,37 +1,36 @@
-import fs = require('fs-extra');
-import path = require('path');
+import fs = require("fs-extra");
+import path = require("path");
 
-import GoogleAuthorizer from '../adapters/google-auth';
-import { ask } from '../adapters/prompt';
-import asyncCommand from '../lib/async-command';
+import GoogleAuthorizer from "../lib/google-auth";
+import { ask } from "../adapters/prompt";
+import asyncCommand from "../lib/async-command";
 
 export default asyncCommand({
-  command: 'authorize',
-  desc: 'fetch a token to access Google services',
+  command: "authorize",
+  desc: "fetch a token to access Google services",
   builder: {
-    'read-only': {
-      describe: 'gain read only access to Google Sheets',
+    "read-only": {
+      describe: "gain read only access to Google Sheets",
       default: false,
-      alias: 'r'
+      alias: "r"
     },
-    'token-path': {
-      describe: 'path where your token will be saved',
-      default: path.join(process.env.HOME, '.credentials', 'sheets.googleapis.com-sheetsql.json'),
-      alias: 't'
+    "token-path": {
+      describe: "path where your token will be saved",
+      default: path.join(
+        process.env.HOME,
+        ".credentials",
+        "sheets.googleapis.com-sheetsql.json"
+      ),
+      alias: "t"
     },
-    'client-secret-path': {
-      describe: 'path where client_secret.json is located',
-      default: path.join(process.cwd(), 'client_secret.json'),
-      alias: 'c'
+    "client-secret-path": {
+      describe: "path where client_secret.json is located",
+      default: path.join(process.cwd(), "client_secret.json"),
+      alias: "c"
     }
   },
   async handler(argv) {
-    let {
-        readOnly,
-        tokenPath,
-        clientSecretPath,
-        verbose
-      } = argv;
+    let { readOnly, tokenPath, clientSecretPath, verbose } = argv;
 
     let credentials;
     try {
@@ -57,7 +56,7 @@ export default asyncCommand({
       let authUrl = authorizer.generateAuthUrl(scope);
 
       console.info(`Authorize this app going to: ${authUrl}`);
-      let code = await ask('Enter the code from that page here: ');
+      let code = await ask("Enter the code from that page here: ");
 
       try {
         token = await authorizer.getToken(code);
@@ -75,12 +74,12 @@ export default asyncCommand({
       }
     }
 
-    console.info('👍  authorize command was successful.');
+    console.info("👍  authorize command was successful.");
   }
 });
 
 function getScope(readOnly): [string] {
-  let base = 'https://www.googleapis.com/auth/spreadsheets';
+  let base = "https://www.googleapis.com/auth/spreadsheets";
   if (readOnly) {
     return [`${base}.readonly`];
   } else {
@@ -92,7 +91,7 @@ function storeToken(tokenPath: string, token: {}) {
   try {
     fs.mkdirSync(path.dirname(tokenPath));
   } catch (err) {
-    if (err.code != 'EEXIST') {
+    if (err.code != "EEXIST") {
       throw err;
     }
   }
