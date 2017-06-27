@@ -1,5 +1,5 @@
 import googleAuth = require("google-auth-library");
-import fs = require("fs-extra");
+import readJSONSync from "./utils/read-json";
 export default class GoogleAuthorizer {
   private client;
 
@@ -84,8 +84,8 @@ export default class GoogleAuthorizer {
       return [base];
     }
   }
-}
 
-function readJSONSync(filePath) {
-  return JSON.parse(fs.readFileSync(filePath, "utf8"));
+  getClient() {
+    return this.client;
+  }
 }

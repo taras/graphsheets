@@ -2,8 +2,9 @@ import fs = require("fs-extra");
 import path = require("path");
 
 import GoogleAuthorizer from "../lib/google-auth";
-import { ask } from "../adapters/prompt";
-import asyncCommand from "../lib/async-command";
+import { ask } from "../lib/utils/prompt";
+import asyncCommand from "../lib/utils/async-command";
+import writeJSONSync from "../lib/utils/write-json";
 
 export default asyncCommand({
   command: "authorize",
@@ -32,7 +33,7 @@ export default asyncCommand({
       let credentials = authorizer.authorize(code);
 
       try {
-        storeToken(tokenPath, credentials);
+        writeJSONSync(tokenPath, credentials);
         console.info(`Saved token to ${tokenPath}`);
       } catch (e) {
         console.error(`Could not write token to ${tokenPath}`);
@@ -43,14 +44,3 @@ export default asyncCommand({
     console.info("👍  authorize command was successful.");
   }
 });
-
-function storeToken(tokenPath: string, token: {}) {
-  try {
-    fs.mkdirSync(path.dirname(tokenPath));
-  } catch (err) {
-    if (err.code != "EEXIST") {
-      throw err;
-    }
-  }
-  fs.writeFileSync(tokenPath, JSON.stringify(token));
-}

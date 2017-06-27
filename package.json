@@ -47,10 +47,11 @@
     ]
   },
   "dependencies": {
+    "find-up": "^2.1.0",
     "fs-extra": "^3.0.1",
     "google-auth-library": "^0.10.0",
     "googleapis": "^19.0.0",
     "heimdalljs-logger": "^0.1.9",
-    "yargs": "^8.0.2"    
+    "yargs": "^8.0.2"
   }
 }
