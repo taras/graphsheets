@@ -40,7 +40,7 @@ export default async function(options: AuthorizeOptions) {
     let scope = getScope(readOnly);
     let authUrl = authorizer.generateAuthUrl(scope);
 
-    console.info(`Authorize this app by visiting this url: ${authUrl}`);
+    console.info(`Authorize this app going to: ${authUrl}`);
     let code = await ask('Enter the code from that page here: ');
 
     try {
