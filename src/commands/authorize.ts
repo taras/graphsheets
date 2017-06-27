@@ -13,20 +13,6 @@ export default asyncCommand({
       describe: "gain read only access to Google Sheets",
       default: false,
       alias: "r"
-    },
-    "token-path": {
-      describe: "path where your token will be saved",
-      default: path.join(
-        process.env.HOME,
-        ".credentials",
-        "sheets.googleapis.com-sheetsql.json"
-      ),
-      alias: "t"
-    },
-    "client-secret-path": {
-      describe: "path where client_secret.json is located",
-      default: path.join(process.cwd(), "client_secret.json"),
-      alias: "c"
     }
   },
   async handler(argv) {
