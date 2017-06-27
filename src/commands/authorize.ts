@@ -26,6 +26,7 @@ export default asyncCommand({
       let authUrl = authorizer.generateAuthUrl(readOnly);
 
       console.info(`Authorize this app going to: ${authUrl}`);
+
       let code = await ask("Enter the code from that page here: ");
 
       let credentials = authorizer.authorize(code);
