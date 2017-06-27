@@ -34,7 +34,7 @@ export default asyncCommand({
 
     let credentials;
     try {
-      credentials = JSON.parse(await fs.readFile(clientSecretPath, "utf8"));
+      credentials = await readJSON(clientSecretPath);
     } catch (e) {
       console.error(`Could not read client_secret.json at ${clientSecretPath}`);
       throw e;
@@ -44,7 +44,7 @@ export default asyncCommand({
 
     let token;
     try {
-      token = JSON.parse(fs.readFileSync(tokenPath, "utf8"));
+      token = await readJSON(tokenPath);
     } catch (e) {
       console.error(`Count not read token file at ${tokenPath}`);
     }
@@ -96,4 +96,8 @@ function storeToken(tokenPath: string, token: {}) {
     }
   }
   fs.writeFileSync(tokenPath, JSON.stringify(token));
+}
+
+async function readJSON(filePath) {
+  return JSON.parse(await fs.readFile(filePath, "utf8"));
 }

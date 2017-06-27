@@ -1,4 +1,3 @@
-import Logger from './logger';
 import googleAuth = require('google-auth-library');
 
 export default class GoogleAuthorizer {
