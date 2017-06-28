@@ -10,7 +10,9 @@
     "alwaysStrict": true,
     "pretty": true,
     "removeComments": true,
-    "lib": ["es6"],
+    "lib": [
+      "es6"
+    ],
     "types": [
       "@types/node"
     ],
@@ -22,6 +24,7 @@
   },
   "exclude": [
     "node_modules",
-    "dist"
+    "dist",
+    "tests"
   ]
 }
