@@ -11,3 +11,7 @@ export interface IAuthorizer {
    */
   authorizeRequest: (payload) => {};
 }
+
+export interface IFetchHeadersResult {
+  [name: string]: string[];
+}

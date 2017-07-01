@@ -1,7 +1,9 @@
 import GoogleSheetsAdapter from "../adapters/google-sheets";
+import { GoogleSheetsAPI4 as API } from "../adapters/google-sheets";
+import { IFetchHeadersResult } from "../Interfaces";
+
 import SpreadsheetModel from "../models/spreadsheet";
 import map from "lodash.map";
-
 export default class GoogleSheetsConnector {
   private api: GoogleSheetsAdapter;
 
@@ -21,27 +23,32 @@ export default class GoogleSheetsConnector {
    * 
    * @param spreadsheetId string
    */
-  async fetchSheets(spreadsheetId) {
-    return this.api.get({
+  async fetchSheets(spreadsheetId: string): Promise<API.SheetProperties[]> {
+    let { sheets } = await this.api.get({
       spreadsheetId
     });
+
+    return map(sheets, "properties");
   }
 
   /**
-   * 
-   * @param spreadsheetId 
-   * @param sheets 
+   * Return a hash with sheet name as key and array of header titles as value.
+   * @param spreadsheetId string
+   * @param sheets string[]
+   * @return 
    */
-  async fetchHeaders(spreadsheetId, sheets) {
-    let { valueRanges: ranges } = await this.api.batchGet({
+  async fetchHeaders(
+    spreadsheetId: string,
+    sheets: string[]
+  ): Promise<IFetchHeadersResult> {
+    let { valueRanges } = await this.api.batchGet({
       spreadsheetId,
       sheets: sheets.map(sheet => `${sheet}!A1:ZZ1`).join(",")
     });
 
-    return ranges.reduce((result, { range, values }) => {
-      // values are wrapped in an array for some reason, so we unwrap it
-      [values] = values;
-      let [name] = range.match(/[A-Z]*/i);
+    return valueRanges.reduce((result, item: API.ValueRange) => {
+      let [values] = item.values;
+      let [name] = item.range.match(/[A-Z]*/i);
       result[name] = values;
       return result;
     }, {});
