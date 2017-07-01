@@ -1,7 +1,7 @@
 import authorize from "./commands/authorize";
 import newCommand from "./commands/new";
 import update from "./commands/update";
-import readFileSync from "./lib/utils/read-json";
+import readFileSync from "./utils/read-json";
 
 import path = require("path");
 import findUp = require("find-up");

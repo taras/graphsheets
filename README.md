@@ -54,6 +54,7 @@ This should create a spreadsheet that has 2 Sheets
 
 ### Google Sheets
 
+* [Google Sheets Node API](https://github.com/google/google-api-nodejs-client/blob/master/apis/sheets/v4.ts#L36)
 * [SheetsDB Example Sheet](https://docs.google.com/spreadsheets/d/1kjeHcZKwW5aWc9MPbyBiy3ByVgHdkDi-H3ihuBKmEPQ/edit?usp=sharing)
 * [Google Visualization Query Language](https://developers.google.com/chart/interactive/docs/querylanguage)
 * [Google Sheets Functions Reference](https://support.google.com/docs/table/25273)

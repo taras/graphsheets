@@ -8,12 +8,14 @@
   "bin": {
     "sheetsql": "./bin/cli"
   },
-  "main": "dist/index.js",
+  "main": "lib/index.js",
   "scripts": {
-    "test": "jest",
+    "pretest": "tsc",
+    "test": "mocha test/ --recursive -t 10000 -S -R spec --require source-map-support/register --require intelli-espower-loader",
     "compile": "tsc",
     "prepublish": "npm run compile",
-    "precommit": "lint-staged"
+    "precommit": "lint-staged",
+    "clean": "find . -name '*.js.map' -type f -delete && find -E . -regex '\\./(test|lib)/.*.js$' -type f -delete"
   },
   "repository": {
     "type": "git",
@@ -31,15 +33,29 @@
   },
   "homepage": "https://github.com/this-dot/sheetsql#readme",
   "devDependencies": {
-    "@types/jest": "^20.0.2",
-    "@types/commander": "^2.9.1",
     "@types/fs-extra": "^3.0.3",
+    "@types/mocha": "^2.2.41",
     "@types/node": "^8.0.2",
+    "@types/power-assert": "^1.4.29",
     "@types/yargs": "^6.6.0",
-    "jest": "^20.0.4",
-    "prettier": "^1.4.4",
+    "find-up": "^2.1.0",
+    "fs-extra": "^3.0.1",
+    "google-auth-library": "^0.10.0",
+    "googleapis": "^19.0.0",
+    "graphql": "^0.10.3",
+    "graphql-tools": "^1.0.0",
+    "heimdalljs-logger": "^0.1.9",
+    "intelli-espower-loader": "^1.0.1",
+    "jasmine": "^2.6.0",
+    "jest-mock": "^20.0.3",
+    "lodash.get": "^4.4.2",
+    "lodash.zipobject": "^4.1.3",
+    "mocha": "^3.4.2",
+    "power-assert": "^1.4.4",
+    "prettier": "^1.5.0",
     "typescript": "^2.3.4",
-    "ts-jest": "^20.0.6"
+    "util.promisify": "^1.0.0",
+    "yargs": "^8.0.2"
   },
   "lint-staged": {
     "**/*.ts": [
@@ -47,24 +63,7 @@
       "git add"
     ]
   },
-  "jest": {
-    "transform": {
-      ".ts": "<rootDir>/node_modules/ts-jest/preprocessor.js"
-    },
-    "testRegex": "(/tests/.*|\\.(test|spec))\\.(ts|js)$",
-    "moduleFileExtensions": [
-      "ts",
-      "tsx",
-      "js",
-      "json"
-    ]
-  },
   "dependencies": {
-    "find-up": "^2.1.0",
-    "fs-extra": "^3.0.1",
-    "google-auth-library": "^0.10.0",
-    "googleapis": "^19.0.0",
-    "heimdalljs-logger": "^0.1.9",
-    "yargs": "^8.0.2"
+    "lodash.map": "^4.6.0"
   }
 }

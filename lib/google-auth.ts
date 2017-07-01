@@ -1,11 +1,19 @@
 import googleAuth = require("google-auth-library");
 import readJSONSync from "./utils/read-json";
-export default class GoogleAuthorizer {
+import { IAuthorizer } from "./Interfaces";
+
+const { assign } = Object;
+export default class GoogleAuthorizer implements IAuthorizer {
   private client;
 
   public isAuthorized: boolean;
 
-  static restore(clientSecretPath, tokenPath) {
+  /**
+   * Instantiate an authorizer from client_secret.json and token json
+   * @param clientSecretPath string
+   * @param tokenPath string
+   */
+  static restore(clientSecretPath, tokenPath): GoogleAuthorizer {
     let clientSecret;
     try {
       clientSecret = readJSONSync(clientSecretPath);
@@ -40,6 +48,10 @@ export default class GoogleAuthorizer {
     this.isAuthorized = !!client.credentials;
   }
 
+  /**
+   * Retrieve credentials for given code and make this service authorized.
+   * @param code string
+   */
   async authorize(code) {
     let credentials;
     try {
@@ -55,6 +67,10 @@ export default class GoogleAuthorizer {
     return credentials;
   }
 
+  /**
+   * Return a url for user to retrieve a token
+   * @param isReadOnly string
+   */
   generateAuthUrl(isReadOnly: boolean): string {
     let scope = this.getScope(isReadOnly);
 
@@ -64,6 +80,10 @@ export default class GoogleAuthorizer {
     });
   }
 
+  /**
+   * Fetch credentials for code
+   * @param code string
+   */
   async getToken(code) {
     return new Promise((resolve, reject) => {
       this.client.getToken(code, (err, tokens) => {
@@ -76,6 +96,11 @@ export default class GoogleAuthorizer {
     });
   }
 
+  /**
+   * Return array with scope required for the document
+   * @param isReadOnly boolean
+   * @return string[]
+   */
   getScope(isReadOnly): [string] {
     let base = "https://www.googleapis.com/auth/spreadsheets";
     if (isReadOnly) {
@@ -85,7 +110,16 @@ export default class GoogleAuthorizer {
     }
   }
 
-  getClient() {
-    return this.client;
+  /**
+   * Merge auth client into the request
+   * @param payload {}
+   */
+  authorizeRequest(payload = {}) {
+    return assign(
+      {
+        auth: this.client
+      },
+      payload
+    );
   }
 }

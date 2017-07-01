@@ -1,10 +1,10 @@
 import fs = require("fs-extra");
 import path = require("path");
 
-import GoogleAuthorizer from "../lib/google-auth";
-import { ask } from "../lib/utils/prompt";
-import asyncCommand from "../lib/utils/async-command";
-import writeJSONSync from "../lib/utils/write-json";
+import GoogleAuthorizer from "../google-auth";
+import { ask } from "../utils/prompt";
+import asyncCommand from "../utils/async-command";
+import writeJSONSync from "../utils/write-json";
 
 export default asyncCommand({
   command: "authorize",

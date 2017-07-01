@@ -1,4 +1,13 @@
 // Place your settings in this file to overwrite default and user settings.
 {
-  "editor.formatOnSave": true
+  "editor.formatOnSave": true,
+  "files.exclude": {
+    "**/.git": true,
+    "**/.svn": true,
+    "**/.hg": true,
+    "**/.DS_Store": true,
+    "**/.vscode": true,
+    "**/*.js": true,
+    "**/*.map": true
+  }
 }
