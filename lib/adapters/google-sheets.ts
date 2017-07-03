@@ -20,8 +20,16 @@ export default class GoogleSheetsAdapter {
     };
   }
 
-  async get(payload): Promise<GoogleSheetsAPI4.Spreadsheet> {
-    return this.authorized(this.sheets.get)(payload);
+  /**
+   * Fetch spreadsheet from Google Sheets API
+   * 
+   * @param options {}
+   * @param options.spreadsheetId string
+   * @param options.includeGridData boolean
+   * @param options.ranges string
+   */
+  async get(options): Promise<GoogleSheetsAPI4.Spreadsheet> {
+    return this.authorized(this.sheets.get)(options);
   }
 
   async batchGet(payload): Promise<GoogleSheetsAPI4.BatchGetResponse> {
@@ -109,9 +117,9 @@ export namespace GoogleSheetsAPI4 {
   }
 
   export interface GridData {
-    startRow: number;
-    startColumn: number;
     rowData: RowData[];
+    startRow?: number;
+    startColumn?: number;
   }
   export interface RowData {
     values: CellData[];
@@ -124,9 +132,9 @@ export namespace GoogleSheetsAPI4 {
     userEnteredValue: ExtendedValue;
     effectiveValue: ExtendedValue;
     formattedValue: string;
-    hyperlink: string;
-    note: string;
-    dataValidation: DataValidationRule;
+    hyperlink?: string;
+    note?: string;
+    dataValidation?: DataValidationRule;
     // TODO: pivotTable: PivotTable;
   }
 

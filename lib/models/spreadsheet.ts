@@ -1,18 +1,28 @@
 import GoogleSheetsConnector from "../connectors/google-sheets";
-
+import Sheet from "./sheet";
 export default class Spreadsheet {
   private connector: GoogleSheetsConnector;
 
   public id: string;
   public url: string;
+  public title: string;
+  public sheets: Sheet[];
 
-  constructor({ connector, id, url }) {
-    this.connector = connector;
-    this.id = id;
-    this.url = url;
-  }
+  constructor(options) {
+    this.connector = options.connector;
+    this.id = options.id;
+    this.url = options.url;
+    this.title = options.title;
 
-  async structure() {
-    return {};
+    if (options.sheets) {
+      this.sheets = options.sheets.map(
+        sheet =>
+          new Sheet({
+            connector: options.connector,
+            spreadsheet: this,
+            ...sheet
+          })
+      );
+    }
   }
 }

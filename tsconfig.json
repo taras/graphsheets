@@ -4,7 +4,8 @@
     "target": "es6",
     "noImplicitAny": false,
     "sourceMap": true,
-    "alwaysStrict": true
+    "alwaysStrict": true,
+    "lib": ["es2016", "es2017"]
   },
   "exclude": ["node_modules"]
 }
