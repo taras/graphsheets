@@ -13,7 +13,11 @@ import tools = require("graphql-tools");
  *    2. Dry-run first - figure out what changes need to be made before starting to make any changes
  *  
  *  Comparison Process:
- *    1. Fetch Spreadsheet state from the API
+ *    1. Fetch Spreadsheet structure from the API
+ *    2. Iterate over type properties and for each property
+ *        - check that a corresponding header exists
+ * 
+ *  TODO finish this command
  * 
  */
 export default asyncCommand({
@@ -39,5 +43,7 @@ export default asyncCommand({
     if (typeDefinitions) {
       let schema = tools.buildSchemaFromTypeDefinitions(typeDefinitions);
     }
+
+    // TODO finish this...
   })
 });

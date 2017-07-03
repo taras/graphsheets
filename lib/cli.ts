@@ -1,6 +1,5 @@
 import authorize from "./commands/authorize";
 import newCommand from "./commands/new";
-import update from "./commands/update";
 import readFileSync from "./utils/read-json";
 
 import path = require("path");
@@ -14,7 +13,6 @@ require("yargs")
   .config(config)
   .command(authorize)
   .command(newCommand)
-  .command(update)
   .option("token-path", {
     describe: "path where your token will be saved",
     default: path.join(
