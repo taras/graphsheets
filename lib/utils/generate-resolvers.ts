@@ -62,8 +62,9 @@ export function singularResolver(
   spreadsheet: Spreadsheet,
   name: string,
   type: GraphQLObjectType
-): (root, id: string, context) => Promise<Record> {
-  return function findSpreadsheetRecord(root, id: string, context) {
+): (root, { id: string }, context) => Promise<Record> {
+  return function findSpreadsheetRecord(root, params, context) {
+    let { id } = params;
     return spreadsheet.findRecord(name, id);
   };
 }
@@ -72,8 +73,8 @@ export function pluralResolver(
   spreadsheet: Spreadsheet,
   name: string,
   type: GraphQLObjectType
-): (root, context) => Promise<Record[]> {
-  return function findAllSpreadsheetRecords(root, context) {
+): (root, args, context) => Promise<Record[]> {
+  return function findAllSpreadsheetRecords(root, params, context) {
     return spreadsheet.findAll(name);
   };
 }

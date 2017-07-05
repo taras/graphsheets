@@ -22,7 +22,11 @@
     "type": "git",
     "url": "https://github.com/this-dot/graphsheets.git"
   },
-  "keywords": ["google-sheets", "graphql", "spreadsheets"],
+  "keywords": [
+    "google-sheets",
+    "graphql",
+    "spreadsheets"
+  ],
   "author": "Taras Mankovski <tarasm@gmail.com>",
   "license": "MIT",
   "bugs": {
@@ -61,6 +65,12 @@
     "yargs": "^8.0.2"
   },
   "lint-staged": {
-    "**/*.ts": ["prettier --write", "git add"]
+    "**/*.ts": [
+      "prettier --write",
+      "git add"
+    ]
+  },
+  "dependencies": {
+    "request-promise-native": "^1.0.4"
   }
 }

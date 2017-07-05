@@ -1,7 +1,7 @@
 import GoogleSheetsConnector from "../connectors/google-sheets";
 import Sheet from "./sheet";
 import Record from "./record";
-import zipObject from "lodash.zipobject";
+import zipObject = require("lodash.zipobject");
 import { GoogleSheets } from "../adapters/google-sheets";
 
 const { assign } = Object;
@@ -35,7 +35,7 @@ export default class Spreadsheet {
   }
 
   async findRecord(type: string, id: string): Promise<Record> {
-    let data = await this.connector.loadRecord(this.url, type, id);
+    let data = await this.connector.loadRecord(this.id, type, id);
 
     return new Record({
       connect: this.connector,
@@ -44,7 +44,7 @@ export default class Spreadsheet {
   }
 
   async findAll(type: string): Promise<Record[]> {
-    let data = await this.connector.loadRecords(this.url, type);
+    let data = await this.connector.loadRecords(this.id, type);
 
     return data.map(item => {
       return new Record({

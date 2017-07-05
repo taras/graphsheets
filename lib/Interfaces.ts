@@ -10,6 +10,8 @@ export interface IAuthorizer {
    * added to the request.
    */
   authorizeRequest: (payload) => {};
+
+  getAuthorizationHeader: () => string;
 }
 
 export interface IFetchHeadersResult {

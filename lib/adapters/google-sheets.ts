@@ -1,11 +1,10 @@
 import google = require("googleapis");
-import apiRequest = require("googleapis/lib/apirequest");
 import promisify = require("util.promisify");
+import request = require("request-promise-native");
 
-const {
-  spreadsheets
-} = google.sheets("v4");
+const { spreadsheets } = google.sheets("v4");
 
+import spreadsheet from "../../test/fixtures/spreadsheet";
 import { IAuthorizer } from "../Interfaces";
 
 const { assign } = Object;
@@ -47,24 +46,39 @@ export default class GoogleSheetsAdapter {
   }
 
   async query(options: IQueryParams): Promise<TableQuery.Response> {
-    let { url, sheet, ids } = options;
+    let { spreadsheetId, sheet, ids } = options;
 
-    let params = {
-      url,
-      headers: {
-        "X-DataSource-Auth": ""
-      },
-      params: assign(
-        {
-          headers: 1,
-          sheet
-        },
-        ids && buildSQLQuery(ids)
-      )
+    let headers = {
+      Authorization: this.authorizer.getAuthorizationHeader(),
+      "X-DataSource-Auth": ""
     };
 
-    return this.authorized(apiRequest)(params);
+    let qs = assign(
+      {
+        headers: 1,
+        sheet
+      },
+      ids && { tq: buildSQLQuery(ids) }
+    );
+
+    return request
+      .get({
+        url: `https://docs.google.com/spreadsheets/d/${spreadsheetId}/gviz/tq`,
+        headers,
+        qs,
+        json: true
+      })
+      .then(payload => JSON.parse(stripBadResponse(payload)));
   }
+}
+
+/**
+ * 
+ * @see https://github.com/google/google-visualization-issues/issues/1928
+ * @param str 
+ */
+export function stripBadResponse(str: string): string {
+  return str.replace(/^\)]}'\n/g, "");
 }
 
 export function buildSQLQuery(ids: string[]) {
@@ -73,7 +87,7 @@ export function buildSQLQuery(ids: string[]) {
 }
 
 export interface IQueryParams {
-  url: string;
+  spreadsheetId: string;
   sheet: string;
   ids?: string[];
 }

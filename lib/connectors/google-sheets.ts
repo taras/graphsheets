@@ -6,16 +6,17 @@ import {
 } from "../adapters/google-sheets";
 import Spreadsheet from "../models/spreadsheet";
 import Record from "../models/record";
-import DataLoader from "../adapters/dataloader";
-import zipObject from "lodash.zipObject";
+import * as DataLoader from "dataloader";
+import zipObject = require("lodash.zipobject");
 
 const { assign } = Object;
 export default class GoogleSheetsConnector {
   private api: GoogleSheetsAdapter;
-  private loaders: { [range: string]: DataLoader };
+  private loaders: { [range: string]: DataLoader<string, {}> };
 
   constructor(adapter: GoogleSheetsAdapter) {
     this.api = adapter;
+    this.loaders = {};
   }
 
   async create(resource): Promise<Spreadsheet> {
@@ -46,48 +47,61 @@ export default class GoogleSheetsConnector {
   }
 
   async loadRecord(
-    url: string,
+    spreadsheetId: string,
     type: string,
     id: string
   ): Promise<{ [name: string]: any }> {
-    let loader = this.ensureLoader(type, async ids => {
-      return this.api.query({
-        url,
-        sheet: type,
-        ids
-      });
-    });
-
-    return loader.load(id).then((response: TableQuery.Response) => {
-      let [data] = deserializeTableQueryResponse(response);
-      return data;
-    });
+    let loader = this.getRecordLoader(spreadsheetId, type);
+    return loader.load(id);
   }
 
-  async loadRecords(
-    url: string,
-    type: string
-  ): Promise<{ [name: string]: any }[]> {
+  async loadRecords(spreadsheetId: string, type: string): Promise<{}[]> {
+    let recordLoader = this.getRecordLoader(spreadsheetId, type);
     let loader = this.ensureLoader("sheet", async () => {
-      return this.api.query({
-        url,
-        sheet: type
-      });
+      return this.api
+        .query({
+          spreadsheetId,
+          sheet: type
+        })
+        .then((response: TableQuery.Response) => {
+          let records = deserializeTableQueryResponse(response);
+          records.forEach(record => {
+            recordLoader.prime(record.id, record);
+          });
+          return records;
+        });
     });
 
-    return loader
-      .load(type)
-      .then((response: TableQuery.Response) =>
-        deserializeTableQueryResponse(response)
-      );
+    return loader.load(type).then((response: Promise<{}[]>) => response);
   }
 
-  ensureLoader(type: string, batch: (ids: string[]) => any): DataLoader {
+  getRecordLoader(url, type): DataLoader<string, {}> {
+    return this.ensureLoader(type, this.makeRecordLoaderBatchFn(url, type));
+  }
+
+  makeRecordLoaderBatchFn(spreadsheetId: string, type: string) {
+    return async ids => {
+      return this.api
+        .query({
+          spreadsheetId,
+          sheet: type,
+          ids
+        })
+        .then((response: TableQuery.Response) => {
+          return deserializeTableQueryResponse(response);
+        });
+    };
+  }
+
+  ensureLoader(
+    type: string,
+    batchFn: (ids: string[]) => any
+  ): DataLoader<string, {}> {
     let loader = this.loaders[type];
     if (loader) {
       return loader;
     } else {
-      loader = new DataLoader(batch);
+      loader = new DataLoader(batchFn);
       this.loaders[type] = loader;
     }
     return loader;

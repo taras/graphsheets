@@ -41,7 +41,7 @@ export default class Sheet {
   constructor(options) {
     assign(
       this,
-      {
+      options.headers && {
         columns: toNotationMap(options.headers)
       },
       options

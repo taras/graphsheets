@@ -122,4 +122,9 @@ export default class GoogleAuthorizer implements IAuthorizer {
       payload
     );
   }
+
+  getAuthorizationHeader() {
+    const { token_type, access_token } = this.client.credentials;
+    return `${token_type} ${access_token}`;
+  }
 }
