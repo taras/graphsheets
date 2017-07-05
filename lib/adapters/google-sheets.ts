@@ -1,8 +1,10 @@
 import google = require("googleapis");
+import apiRequest = require("googleapis/lib/apirequest");
 import promisify = require("util.promisify");
 
 import { IAuthorizer } from "../Interfaces";
 
+const { assign } = Object;
 export default class GoogleSheetsAdapter {
   private authorizer: IAuthorizer;
   private sheets;
@@ -28,20 +30,85 @@ export default class GoogleSheetsAdapter {
    * @param options.includeGridData boolean
    * @param options.ranges string
    */
-  async get(options): Promise<GoogleSheetsAPI4.Spreadsheet> {
+  async get(options): Promise<GoogleSheets.Spreadsheet> {
     return this.authorized(this.sheets.get)(options);
   }
 
-  async batchGet(payload): Promise<GoogleSheetsAPI4.BatchGetResponse> {
+  async batchGet(payload): Promise<GoogleSheets.BatchGetResponse> {
     return this.authorized(this.sheets.batchGet)(payload);
   }
 
   async create(payload) {
     return this.authorized(this.sheets.create)(payload);
   }
+
+  async query(options: IQueryParams): Promise<TableQuery.Response> {
+    let { url, sheet, ids } = options;
+
+    let params = {
+      url,
+      headers: {
+        "X-DataSource-Auth": ""
+      },
+      params: assign(
+        {
+          headers: 1,
+          sheet
+        },
+        ids && buildSQLQuery(ids)
+      )
+    };
+
+    return this.authorized(apiRequest)(params);
+  }
 }
 
-export namespace GoogleSheetsAPI4 {
+export function buildSQLQuery(ids: string[]) {
+  let where = ids.map(id => `A='${id}'`).join(" OR ");
+  return `SELECT * WHERE ${where}`;
+}
+
+export interface IQueryParams {
+  url: string;
+  sheet: string;
+  ids?: string[];
+}
+
+export namespace TableQuery {
+  export interface Response {
+    version: string;
+    reqId: string;
+    status: string;
+    sig: string;
+    table: Table;
+  }
+  export interface Table {
+    cols: Column[];
+    rows: Row[];
+  }
+
+  export interface Column {
+    id: string;
+    label: string;
+    type: ColumnType;
+  }
+
+  export interface Row {
+    c: Cell[];
+  }
+
+  export interface Cell {
+    v: string | number;
+    f?: string;
+  }
+
+  enum ColumnType {
+    string,
+    number
+  }
+}
+
+export namespace GoogleSheets {
   export interface Spreadsheet {
     spreadsheetId: string;
     properties: SpreadsheetProperties;
@@ -71,7 +138,6 @@ export namespace GoogleSheetsAPI4 {
     name: string;
     range: GridRange;
   }
-
   export interface Sheet {
     properties: SheetProperties;
     data: GridData[];

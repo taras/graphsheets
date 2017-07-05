@@ -22,6 +22,11 @@ require("yargs")
     ),
     alias: "t"
   })
+  .option("schema-path", {
+    describe: "path to the schema.graphql file",
+    default: path.join(process.cwd(), "schema.graphql"),
+    alias: "p"
+  })
   .option("id", {
     describe: "id of the database spreadsheet"
   })
