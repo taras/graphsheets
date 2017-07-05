@@ -2,6 +2,10 @@ import google = require("googleapis");
 import apiRequest = require("googleapis/lib/apirequest");
 import promisify = require("util.promisify");
 
+const {
+  spreadsheets
+} = google.sheets("v4");
+
 import { IAuthorizer } from "../Interfaces";
 
 const { assign } = Object;
@@ -11,7 +15,7 @@ export default class GoogleSheetsAdapter {
 
   constructor(authorizer: IAuthorizer) {
     this.authorizer = authorizer;
-    this.sheets = google.sheets("v4");
+    this.sheets = spreadsheets;
   }
 
   private authorized(operation) {

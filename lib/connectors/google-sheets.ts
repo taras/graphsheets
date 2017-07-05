@@ -8,6 +8,8 @@ import Spreadsheet from "../models/spreadsheet";
 import Record from "../models/record";
 import DataLoader from "../adapters/dataloader";
 import zipObject from "lodash.zipObject";
+
+const { assign } = Object;
 export default class GoogleSheetsConnector {
   private api: GoogleSheetsAdapter;
   private loaders: { [range: string]: DataLoader };
@@ -33,9 +35,9 @@ export default class GoogleSheetsConnector {
    */
   async load(spreadsheetId: string, sheets: string[]): Promise<Spreadsheet> {
     let response = await this.api.get({
-      spreadsheetId,
-      includeGridData: true,
-      ranges: sheets.map(sheet => `${sheet}!A1:ZZ1`).join(",")
+      spreadsheetId
+      // includeGridData: true,
+      // ranges: sheets.map(sheet => `${sheet}!A1:A`)
     });
 
     let options = deserializeSpreadsheet(response);
@@ -131,14 +133,16 @@ export function deserializeSheet(sheet: GoogleSheets.Sheet) {
     data
   } = sheet;
 
-  return {
-    id,
-    title,
-    index,
-    headers: extractHeaders(data),
-    columnCount,
-    rowCount
-  };
+  return assign(
+    {
+      id,
+      title,
+      index,
+      columnCount,
+      rowCount
+    },
+    data && { headers: extractHeaders(data) }
+  );
 }
 
 export function extractHeaders(data: GoogleSheets.GridData[]) {

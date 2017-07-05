@@ -6,9 +6,9 @@
     "node": ">=7.4"
   },
   "bin": {
-    "graphsheets": "./bin/cli"
+    "graphsheets": "./bin/graphsheets"
   },
-  "main": "lib/index.js",
+  "main": "lib/cli.js",
   "scripts": {
     "pretest": "npm run compile",
     "test": "npm run mocha",
@@ -22,11 +22,7 @@
     "type": "git",
     "url": "https://github.com/this-dot/graphsheets.git"
   },
-  "keywords": [
-    "google-sheets",
-    "graphql",
-    "spreadsheets"
-  ],
+  "keywords": ["google-sheets", "graphql", "spreadsheets"],
   "author": "Taras Mankovski <tarasm@gmail.com>",
   "license": "MIT",
   "bugs": {
@@ -65,9 +61,6 @@
     "yargs": "^8.0.2"
   },
   "lint-staged": {
-    "**/*.ts": [
-      "prettier --write",
-      "git add"
-    ]
+    "**/*.ts": ["prettier --write", "git add"]
   }
 }

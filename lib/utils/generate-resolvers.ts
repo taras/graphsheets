@@ -4,6 +4,9 @@ import { filterObject, reduceObject } from "./object-utils";
 
 import { IResolvers } from "graphql-tools/dist/Interfaces";
 import { GraphQLSchema, GraphQLObjectType } from "graphql";
+import onlyObjectTypes from "./only-object-types";
+
+const { assign } = Object;
 
 /**
  * For every type return the following,
@@ -23,55 +26,54 @@ export default function generateResolvers(
   schema: GraphQLSchema,
   spreadsheet
 ): IResolvers {
-  let types = schema.getTypeMap();
+  let typesMap = schema.getTypeMap();
 
-  let objectTypes = filterObject(
-    types,
-    (name, type) => type instanceof GraphQLObjectType
-  );
+  let objectTypes = onlyObjectTypes(typesMap);
 
-  let query = reduceObject(
+  let Query = reduceObject(
     objectTypes,
     (
       query: { [name: string]: GraphQLObjectType },
       name: string,
       type: GraphQLObjectType
     ) => {
-      return Object.assign(query, {
+      return assign(query, {
         [singular(name)]: singularResolver(spreadsheet, name, type),
         [plural(name)]: pluralResolver(spreadsheet, name, type)
       });
     }
   );
 
-  return;
+  return {
+    Query
+  };
 }
 
 export function singular(name: string) {
   return name.toLowerCase();
 }
 
+export function plural(name) {
+  // TODO: replace this with the inflector
+  return `${name.toLowerCase()}s`;
+}
+
 export function singularResolver(
   spreadsheet: Spreadsheet,
   name: string,
   type: GraphQLObjectType
-): (id: string) => Promise<Record> {
-  return function findSpreadsheetRecord(id: string) {
+): (root, id: string, context) => Promise<Record> {
+  return function findSpreadsheetRecord(root, id: string, context) {
     return spreadsheet.findRecord(name, id);
   };
-}
-
-export function plural(name) {
-  // TODO: replace this with the inflector
-  return `${name}s`;
 }
 
 export function pluralResolver(
   spreadsheet: Spreadsheet,
   name: string,
   type: GraphQLObjectType
-): () => Promise<Record[]> {
-  return function findAllSpreadsheetRecords() {
+): (root, context) => Promise<Record[]> {
+  return function findAllSpreadsheetRecords(root, context) {
     return spreadsheet.findAll(name);
   };
 }

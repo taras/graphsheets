@@ -4,7 +4,7 @@ import GoogleSheetsConnector from "../connectors/google-sheets";
 import Spreadsheet from "../models/spreadsheet";
 import asyncCommand from "../utils/async-command";
 import authorize from "../utils/authorize-handler";
-import bodyParser from "body-parser";
+import * as bodyParser from "body-parser";
 import * as express from "express";
 import * as fs from "fs";
 import { graphiqlExpress, graphqlExpress } from "graphql-server-express";
@@ -14,6 +14,8 @@ import {
 } from "graphql-tools";
 import { ITypeDefinitions } from "graphql-tools/dist/Interfaces";
 import generateResolvers from "../utils/generate-resolvers";
+import onlyObjectTypes from "../utils/only-object-types";
+import http = require("http");
 
 const { keys } = Object;
 
@@ -28,7 +30,7 @@ export default asyncCommand({
     }
   },
   handler: authorize(async function handler(argv, authorizer) {
-    let { schemaPath, id } = argv;
+    let { schemaPath, id, port } = argv;
 
     let typeDefs: ITypeDefinitions;
     try {
@@ -38,12 +40,12 @@ export default asyncCommand({
     }
 
     let schema = buildSchemaFromTypeDefinitions(typeDefs);
-    let types = schema.getTypeMap();
+    let typesMap = schema.getTypeMap();
+    let objectTypes = onlyObjectTypes(typesMap);
 
     let adapter = new GoogleSheetsAdapter(authorizer);
     let connector = new GoogleSheetsConnector(adapter);
-
-    let spreadsheet = await connector.load(id, keys(types));
+    let spreadsheet = await connector.load(id, keys(objectTypes));
 
     let resolvers = generateResolvers(schema, spreadsheet);
 
@@ -55,16 +57,26 @@ export default asyncCommand({
     let app = express();
 
     app.use(
+      "/graphql",
+      bodyParser.json(),
+      graphqlExpress({ schema: executableSchema })
+    );
+
+    app.use(
       "/",
       graphiqlExpress({
         endpointURL: "/graphql"
       })
     );
 
-    app.use(
-      "/graphql",
-      bodyParser.json(),
-      graphqlExpress({ schema: executableSchema })
-    );
+    let server = http.createServer(app).listen(port);
+
+    await new Promise(function(resole, reject) {
+      server
+        .on("listening", () => {
+          console.log("Started server on http://localhost:3000");
+        })
+        .on("error", reject);
+    });
   })
 });

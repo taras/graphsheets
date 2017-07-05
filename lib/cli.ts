@@ -1,5 +1,6 @@
 import authorize from "./commands/authorize";
 import newCommand from "./commands/new";
+import serverCommand from "./commands/server";
 import readFileSync from "./utils/read-json";
 
 import path = require("path");
@@ -13,6 +14,7 @@ require("yargs")
   .config(config)
   .command(authorize)
   .command(newCommand)
+  .command(serverCommand)
   .option("token-path", {
     describe: "path where your token will be saved",
     default: path.join(
@@ -24,8 +26,7 @@ require("yargs")
   })
   .option("schema-path", {
     describe: "path to the schema.graphql file",
-    default: path.join(process.cwd(), "schema.graphql"),
-    alias: "p"
+    default: path.join(process.cwd(), "schema.graphql")
   })
   .option("id", {
     describe: "id of the database spreadsheet"
