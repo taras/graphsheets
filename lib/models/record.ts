@@ -5,7 +5,6 @@ export default class Record {
   private connector: GoogleSheetsConnector;
 
   constructor(options) {
-    console.log(options);
     assign(this, options);
   }
 }
