@@ -65,8 +65,7 @@ export default class GoogleSheetsAdapter {
       .get({
         url: `https://docs.google.com/spreadsheets/d/${spreadsheetId}/gviz/tq`,
         headers,
-        qs,
-        json: true
+        qs
       })
       .then(payload => JSON.parse(stripBadResponse(payload)));
   }

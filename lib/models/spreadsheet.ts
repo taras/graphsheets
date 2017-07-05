@@ -49,7 +49,7 @@ export default class Spreadsheet {
     return data.map(item => {
       return new Record({
         connector: this.connector,
-        ...data
+        ...item
       });
     });
   }

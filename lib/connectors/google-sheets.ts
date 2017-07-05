@@ -57,22 +57,18 @@ export default class GoogleSheetsConnector {
 
   async loadRecords(spreadsheetId: string, type: string): Promise<{}[]> {
     let recordLoader = this.getRecordLoader(spreadsheetId, type);
-    let loader = this.ensureLoader("sheet", async () => {
-      return this.api
-        .query({
-          spreadsheetId,
-          sheet: type
-        })
-        .then((response: TableQuery.Response) => {
-          let records = deserializeTableQueryResponse(response);
-          records.forEach(record => {
-            recordLoader.prime(record.id, record);
-          });
-          return records;
+    return this.api
+      .query({
+        spreadsheetId,
+        sheet: type
+      })
+      .then((response: TableQuery.Response) => {
+        let records = deserializeTableQueryResponse(response);
+        records.forEach(record => {
+          recordLoader.prime(record.id, record);
         });
-    });
-
-    return loader.load(type).then((response: Promise<{}[]>) => response);
+        return records;
+      });
   }
 
   getRecordLoader(url, type): DataLoader<string, {}> {
