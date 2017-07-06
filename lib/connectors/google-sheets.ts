@@ -55,7 +55,7 @@ export default class GoogleSheetsConnector {
     return loader.load(id);
   }
 
-  async loadRecords(spreadsheetId: string, type: string): Promise<{}[]> {
+  async loadAll(spreadsheetId: string, type: string): Promise<{}[]> {
     let recordLoader = this.getRecordLoader(spreadsheetId, type);
     return this.api
       .query({
@@ -69,6 +69,16 @@ export default class GoogleSheetsConnector {
         });
         return records;
       });
+  }
+
+  async loadRecords(
+    spreadsheetId: string,
+    type: string,
+    ids: string[]
+  ): Promise<{ [name: string]: any }[]> {
+    let loader = this.getRecordLoader(spreadsheetId, type);
+
+    return loader.loadMany(ids);
   }
 
   getRecordLoader(url, type): DataLoader<string, {}> {

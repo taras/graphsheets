@@ -44,13 +44,22 @@ export default class Spreadsheet {
   }
 
   async findAll(type: string): Promise<Record[]> {
-    let data = await this.connector.loadRecords(this.id, type);
+    let data = await this.connector.loadAll(this.id, type);
 
     return data.map(item => {
       return new Record({
         connector: this.connector,
         ...item
       });
+    });
+  }
+
+  async findRecords(type: string, ids: string[]) {
+    let data = this.connector.loadRecords(this.id, type, ids);
+
+    return new Record({
+      connect: this.connector,
+      ...data
     });
   }
 }

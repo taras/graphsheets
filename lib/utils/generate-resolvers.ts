@@ -1,12 +1,20 @@
 import Spreadsheet from "../models/spreadsheet";
 import Record from "../models/record";
-import { filterObject, reduceObject } from "./object-utils";
+import { filterObject, reduceObject, mapObject } from "./object-utils";
 
 import { IResolvers } from "graphql-tools/dist/Interfaces";
-import { GraphQLSchema, GraphQLObjectType } from "graphql";
+import {
+  GraphQLSchema,
+  GraphQLObjectType,
+  GraphQLNamedType,
+  isCompositeType,
+  GraphQLNonNull,
+  getNamedType,
+  GraphQLList
+} from "graphql";
 import onlyObjectTypes from "./only-object-types";
 
-const { assign } = Object;
+const { assign, keys } = Object;
 
 /**
  * For every type return the following,
@@ -22,10 +30,7 @@ const { assign } = Object;
  * @param schema GraphQLSchema
  * @param spreadsheet Spreadsheet
  */
-export default function generateResolvers(
-  schema: GraphQLSchema,
-  spreadsheet
-): IResolvers {
+export default function generateResolvers(schema: GraphQLSchema, spreadsheet) {
   let typesMap = schema.getTypeMap();
 
   let objectTypes = onlyObjectTypes(typesMap);
@@ -33,20 +38,77 @@ export default function generateResolvers(
   let Query = reduceObject(
     objectTypes,
     (
-      query: { [name: string]: GraphQLObjectType },
+      result: { [name: string]: GraphQLObjectType },
       name: string,
       type: GraphQLObjectType
     ) => {
-      return assign(query, {
-        [singular(name)]: singularResolver(spreadsheet, name, type),
-        [plural(name)]: pluralResolver(spreadsheet, name, type)
-      });
+      let singularName = singular(name);
+      let pluralName = plural(name);
+
+      return assign(
+        result,
+        isDefinedQuery(typesMap, singularName) && {
+          [singularName]: singularResolver(spreadsheet, name, type)
+        },
+        isDefinedQuery(typesMap, pluralName) && {
+          [pluralName]: pluralResolver(spreadsheet, name, type)
+        }
+      );
     }
   );
 
-  return {
-    Query
-  };
+  let rootTypes = reduceObject(
+    objectTypes,
+    (
+      result: { [name: string]: GraphQLObjectType },
+      name: string,
+      type: GraphQLObjectType
+    ) => {
+      let fields = onlyComposite(type.getFields());
+
+      if (keys(fields).length > 0) {
+        return assign(result, {
+          [name]: mapObject(fields, (propName, field) => {
+            let type = getFieldType(field);
+            if (field.type instanceof GraphQLList) {
+              return listReferenceResolver(spreadsheet, propName, type.name);
+            } else {
+              return singleReferenceResolver(spreadsheet, propName, type.name);
+            }
+          })
+        });
+      } else {
+        return result;
+      }
+    }
+  );
+  return assign(
+    {
+      Query
+    },
+    rootTypes
+  );
+}
+
+export function onlyComposite(fields) {
+  return filterObject(fields, (propName, field) => {
+    return isCompositeType(getFieldType(field));
+  });
+}
+
+export function getFieldType(field) {
+  let { type } = field;
+  if (type instanceof GraphQLNonNull || type instanceof GraphQLList) {
+    return getNamedType(type);
+  } else {
+    return type;
+  }
+}
+
+export function isDefinedQuery(typesMap, name: string): boolean {
+  let { Query } = typesMap;
+  let fields = Query.getFields();
+  return !!fields[name];
 }
 
 export function singular(name: string) {
@@ -58,13 +120,41 @@ export function plural(name) {
   return `${name.toLowerCase()}s`;
 }
 
+export function listReferenceResolver(
+  spreadsheet,
+  propName: string,
+  type: string
+) {
+  return function findListReference(root, params, context) {
+    let value = root[propName];
+    if (value) {
+      let ids = value.split(",");
+      if (value.length > 0) {
+        return spreadsheet.findRecords(type, ids);
+      }
+    }
+  };
+}
+
+export function singleReferenceResolver(
+  spreadsheet,
+  propName: string,
+  type: string
+) {
+  return function findSingleReference(root, params, context) {
+    let value = root[propName];
+    if (value) {
+      return spreadsheet.findRecord(type, value);
+    }
+  };
+}
+
 export function singularResolver(
   spreadsheet: Spreadsheet,
   name: string,
   type: GraphQLObjectType
 ): (root, { id: string }, context) => Promise<Record> {
-  return function findSpreadsheetRecord(root, params, context) {
-    let { id } = params;
+  return function findSpreadsheetRecord(root, { id }, context) {
     return spreadsheet.findRecord(name, id);
   };
 }
