@@ -54,12 +54,15 @@ export default class Spreadsheet {
     });
   }
 
-  async findRecords(type: string, ids: string[]) {
-    let data = this.connector.loadRecords(this.id, type, ids);
+  async findRecords(type: string, ids: string[]): Promise<Record[]> {
+    let data = await this.connector.loadRecords(this.id, type, ids);
 
-    return new Record({
-      connect: this.connector,
-      ...data
-    });
+    return data.map(
+      item =>
+        new Record({
+          connect: this.connector,
+          ...item
+        })
+    );
   }
 }
