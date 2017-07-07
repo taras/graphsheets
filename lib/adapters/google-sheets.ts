@@ -46,7 +46,7 @@ export default class GoogleSheetsAdapter {
   }
 
   async query(options: IQueryParams): Promise<TableQuery.Response> {
-    let { spreadsheetId, sheet, ids } = options;
+    let { spreadsheetId, sheet, ids, tqx } = options;
 
     let headers = {
       Authorization: this.authorizer.getAuthorizationHeader(),
@@ -58,7 +58,8 @@ export default class GoogleSheetsAdapter {
         headers: 1,
         sheet
       },
-      ids && { tq: buildSQLQuery(ids) }
+      ids && { tq: buildSQLQuery(ids) },
+      tqx && { tqx: tqx instanceof Array ? tqx.join(";") : tqx }
     );
 
     return request
@@ -81,7 +82,7 @@ export function stripBadResponse(str: string): string {
 }
 
 export function buildSQLQuery(ids: string[]) {
-  let where = ids.map(id => `A='${id}'`).join(" OR ");
+  let where = ids.map(id => `B='${id}'`).join(" OR ");
   return `SELECT * WHERE ${where}`;
 }
 
@@ -89,6 +90,7 @@ export interface IQueryParams {
   spreadsheetId: string;
   sheet: string;
   ids?: string[];
+  tqx?: string[] | string;
 }
 
 export namespace TableQuery {
