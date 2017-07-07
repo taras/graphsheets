@@ -101,6 +101,10 @@ ansi-regex@^3.0.0:
   version "3.0.0"
   resolved "https://registry.yarnpkg.com/ansi-regex/-/ansi-regex-3.0.0.tgz#ed0317c322064f79466c02966bddb605ab37d998"
 
+any-base@^1.0.0:
+  version "1.0.1"
+  resolved "https://registry.yarnpkg.com/any-base/-/any-base-1.0.1.tgz#feace48fda1aa42f2b7546f2caae4cc26704a3de"
+
 array-filter@^1.0.0:
   version "1.0.0"
   resolved "https://registry.yarnpkg.com/array-filter/-/array-filter-1.0.0.tgz#baf79e62e6ef4c2a4c0b831232daffec251f9d83"
@@ -1647,6 +1651,13 @@ set-blocking@^2.0.0:
 setprototypeof@1.0.3:
   version "1.0.3"
   resolved "https://registry.yarnpkg.com/setprototypeof/-/setprototypeof-1.0.3.tgz#66567e37043eeb4f04d91bd658c0cbefb55b8e04"
+
+short-uuid@^2.3.3:
+  version "2.3.3"
+  resolved "https://registry.yarnpkg.com/short-uuid/-/short-uuid-2.3.3.tgz#7a934001fd0c06d48202bfe9e9b11b2c7376cdf7"
+  dependencies:
+    any-base "^1.0.0"
+    uuid "^3.0.0"
 
 signal-exit@^3.0.0:
   version "3.0.2"

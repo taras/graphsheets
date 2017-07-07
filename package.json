@@ -60,6 +60,7 @@
     "mocha": "^3.4.2",
     "power-assert": "^1.4.4",
     "prettier": "^1.5.0",
+    "short-uuid": "^2.3.3",
     "typescript": "^2.3.4",
     "util.promisify": "^1.0.0",
     "yargs": "^8.0.2"

@@ -33,6 +33,51 @@ const { assign, keys } = Object;
 export default function generateResolvers(schema: GraphQLSchema, spreadsheet) {
   let typesMap = schema.getTypeMap();
 
+  let queries = generateQueryResolvers(typesMap, spreadsheet);
+  let mutations = generateMutationResolvers(typesMap, spreadsheet);
+
+  return assign({}, queries, mutations);
+}
+
+export function generateMutationResolvers(
+  typesMap: { [typeName: string]: GraphQLNamedType },
+  spreadsheet: Spreadsheet
+): { Mutation?: { [name: string]: (root, args, context) => any } } {
+  let objectTypes = onlyObjectTypes(typesMap);
+
+  let Mutation = reduceObject(
+    objectTypes,
+    (
+      result: { [name: string]: (root, args, context) => any },
+      name: string,
+      type: GraphQLObjectType
+    ) => {
+      return assign(
+        result,
+        isDefinedMutation(typesMap, `create${name}`) && {
+          [`create${name}`]: createRecordResolver(spreadsheet, name)
+        },
+        isDefinedMutation(typesMap, `update${name}`) && {
+          [`update${name}`]: updateRecordResolver(spreadsheet, name)
+        },
+        isDefinedMutation(typesMap, `delete${name}`) && {
+          [`delete${name}`]: deleteRecordResolver(spreadsheet, name)
+        }
+      );
+    }
+  );
+
+  if (keys(Mutation).length > 0) {
+    return { Mutation };
+  } else {
+    return {};
+  }
+}
+
+export function generateQueryResolvers(
+  typesMap: { [typeName: string]: GraphQLNamedType },
+  spreadsheet: Spreadsheet
+) {
   let objectTypes = onlyObjectTypes(typesMap);
 
   let Query = reduceObject(
@@ -82,6 +127,7 @@ export default function generateResolvers(schema: GraphQLSchema, spreadsheet) {
       }
     }
   );
+
   return assign(
     {
       Query
@@ -111,6 +157,14 @@ export function isDefinedQuery(typesMap, name: string): boolean {
   return !!fields[name];
 }
 
+export function isDefinedMutation(typesMap, name: string): boolean {
+  let { Mutation } = typesMap;
+  if (Mutation) {
+    let fields = Mutation.getFields();
+    return !!fields[name];
+  }
+}
+
 export function singular(name: string) {
   return name.toLowerCase();
 }
@@ -120,8 +174,29 @@ export function plural(name) {
   return `${name.toLowerCase()}s`;
 }
 
+export function createRecordResolver(spreadsheet: Spreadsheet, type: string) {
+  return function createRecord(root, props, context) {
+    let payload = props[singular(type)];
+    return spreadsheet.createRecord(type, payload);
+  };
+}
+
+export function updateRecordResolver(spreadsheet: Spreadsheet, type: string) {
+  return function updateRecord(root, props, context) {
+    let payload = props[singular(type)];
+    return spreadsheet.updateRecord(type, payload);
+  };
+}
+
+export function deleteRecordResolver(spreadsheet: Spreadsheet, type: string) {
+  return function deleteRecord(root, props, context) {
+    let { id } = props;
+    return spreadsheet.deleteRecord(type, id);
+  };
+}
+
 export function listReferenceResolver(
-  spreadsheet,
+  spreadsheet: Spreadsheet,
   propName: string,
   type: string
 ) {

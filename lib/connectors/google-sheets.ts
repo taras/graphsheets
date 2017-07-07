@@ -36,9 +36,9 @@ export default class GoogleSheetsConnector {
    */
   async load(spreadsheetId: string, sheets: string[]): Promise<Spreadsheet> {
     let response = await this.api.get({
-      spreadsheetId
-      // includeGridData: true,
-      // ranges: sheets.map(sheet => `${sheet}!A1:A`)
+      spreadsheetId,
+      includeGridData: true,
+      ranges: sheets.map(sheet => `${sheet}!A1:A`)
     });
 
     let options = deserializeSpreadsheet(response);
@@ -69,6 +69,46 @@ export default class GoogleSheetsConnector {
         });
         return records;
       });
+  }
+
+  async createRecord(
+    spreadsheetId: string,
+    type: string,
+    props: { [name: string]: any }
+  ): Promise<{ [name: string]: any }> {
+    // TODO:
+    //  1. fetch headers
+    //  2. create batch update
+    //  3. send the update
+    //  4. return the object
+
+    return {};
+  }
+
+  async updateRecord(
+    spreadsheetId: string,
+    type: string,
+    props: { [name: string]: any }
+  ): Promise<{ [name: string]: any }> {
+    let { id } = props;
+
+    if (!id) {
+      throw new Error(`id is required to perform updateRecord`);
+    }
+    // TODO: implement
+    return {};
+  }
+
+  async deleteRecord(
+    spreadsheetId: string,
+    type: string,
+    id: string
+  ): Promise<void> {
+    if (!id) {
+      throw new Error(`id is required to delete a record.`);
+    }
+    // TODO: implement
+    return Promise.resolve();
   }
 
   async loadRecords(
