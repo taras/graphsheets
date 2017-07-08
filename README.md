@@ -40,6 +40,7 @@ This should create a spreadsheet that has 2 Sheets
 ### GraphQL
 
 * [Launchpad GraphQL Example](https://launchpad.graphql.com/x18k3z89l)
+* [GraphQL Types](http://graphql.org/graphql-js/type/)
 * [GraphQL Schema Language Cheat Sheet](https://raw.githubusercontent.com/sogko/graphql-shorthand-notation-cheat-sheet/master/graphql-shorthand-notation-cheat-sheet.png)
 * [Proposal: Serial fields (nested mutations)](https://github.com/facebook/graphql/issues/252)
 * [Awesome GraphQL](https://github.com/apollographql/launchpad)

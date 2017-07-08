@@ -249,21 +249,21 @@ describe("generateResolvers", () => {
   describe("onlyComposite", () => {
     let result;
     const schema = buildSchemaFromTypeDefinitions(`
-    type Person {
-      id: String!
-    }
+      type Person {
+        id: String!
+      }
 
-    type Product {
-      id: String!
-      owner: Person
-      creator: Person!
-      inPackage: [Product]
-    }
+      type Product {
+        id: String!
+        owner: Person
+        creator: Person!
+        inPackage: [Product]
+      }
 
-    type Query {
-      person(id: String!): Person
-    }
-  `);
+      type Query {
+        person(id: String!): Person
+      }
+    `);
     beforeEach(() => {
       let typeMap = schema.getTypeMap();
       let Product = onlyObjectTypes(typeMap).Product;
@@ -360,7 +360,10 @@ describe("generateResolvers", () => {
           assert.equal(spreadsheet.createRecord.mock.calls.length, 1);
           assert.deepEqual(spreadsheet.createRecord.mock.calls[0], [
             "Person",
-            { firstName: "Taras", lastName: "Mankovski" }
+            {
+              firstName: "Taras",
+              lastName: "Mankovski"
+            }
           ]);
         });
       });

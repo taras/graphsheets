@@ -45,6 +45,10 @@ export default class GoogleSheetsAdapter {
     return this.authorized(this.sheets.create)(payload);
   }
 
+  async append(payload: AppendRequest): Promise<GoogleSheets.AppendResponse> {
+    return this.authorized(this.sheets.values.append)(payload);
+  }
+
   async query(options: IQueryParams): Promise<TableQuery.Response> {
     let { spreadsheetId, sheet, ids, tqx } = options;
 
@@ -91,6 +95,15 @@ export interface IQueryParams {
   sheet: string;
   ids?: string[];
   tqx?: string[] | string;
+}
+
+export interface AppendRequest {
+  spreadsheetId: string;
+  range: string;
+  includeValuesInResponse: boolean;
+  insertDataOption: GoogleSheets.InsertDataOption;
+  resource: GoogleSheets.ValueRange;
+  valueInputOption: GoogleSheets.ValueInputOption;
 }
 
 export namespace TableQuery {
@@ -144,7 +157,7 @@ export namespace GoogleSheets {
   export interface ValueRange {
     range: string;
     majorDimension: Dimension;
-    values: any[];
+    values: Value[][];
   }
 
   export enum Dimension {
@@ -327,4 +340,47 @@ export namespace GoogleSheets {
     N_A, // Corresponds to the #N/A error.
     LOADING //Corresponds to the Loading... state.
   }
+
+  export interface AppendResponse {
+    spreadsheetId: string;
+    tableRange: string;
+    updates: UpdateValuesResponse;
+    valueInputOption?: ValueInputOption;
+    insertDataOption?: InsertDataOption;
+    includeValuesInResponse?: boolean;
+    responseValueRenderOption?: ValueRenderOption;
+    responseDateTimeRenderOption?: DateTimeRenderOption;
+  }
+
+  export enum DateTimeRenderOption {
+    SERIAL_NUMBER, // Instructs date, time, datetime, and duration fields to be output as doubles in "serial number" format, as popularized by Lotus 1-2-3. The whole number portion of the value (left of the decimal) counts the days since December 30th 1899. The fractional portion (right of the decimal) counts the time as a fraction of the day. For example, January 1st 1900 at noon would be 2.5, 2 because it's 2 days after December 30st 1899, and .5 because noon is half a day. February 1st 1900 at 3pm would be 33.625. This correctly treats the year 1900 as not a leap year.
+    FORMATTED_STRING // Instructs date, time, datetime, and duration fields to be output as strings in their given number format (which is dependent on the spreadsheet locale).
+  }
+
+  export enum ValueRenderOption {
+    FORMATTED_VALUE, // Values will be calculated & formatted in the reply according to the cell's formatting. Formatting is based on the spreadsheet's locale, not the requesting user's locale. For example, if A1 is 1.23 and A2 is =A1 and formatted as currency, then A2 would return "$1.23".
+    UNFORMATTED_VALUE, // Values will be calculated, but not formatted in the reply. For example, if A1 is 1.23 and A2 is =A1 and formatted as currency, then A2 would return the number 1.23.
+    FORMULA // Values will not be calculated. The reply will include the formulas. For example, if A1 is 1.23 and A2 is =A1 and formatted as currency, then A2 would return "=A1".
+  }
+
+  export enum InsertDataOption {
+    OVERWRITE, // The new data overwrites existing data in the areas it is written. (Note: adding data to the end of the sheet will still insert new rows or columns so the data can be written.)
+    INSERT_ROWS // Rows are inserted for the new data.
+  }
+
+  export enum ValueInputOption {
+    INPUT_VALUE_OPTION_UNSPECIFIED, // Default input value. This value must not be used.
+    RAW, // The values the user has entered will not be parsed and will be stored as-is.
+    USER_ENTERED // The values will be parsed as if the user typed them into the UI. Numbers will stay as numbers, but strings may be converted to numbers, dates, etc. following the same rules that are applied when entering text into a cell via the Google Sheets UI.
+  }
+  export interface UpdateValuesResponse {
+    spreadsheetId: string;
+    updatedRange: string;
+    updatedRows: number;
+    updatedColumns: number;
+    updatedCells: number;
+    updatedData: ValueRange;
+  }
+
+  export type Value = string | number | boolean | null;
 }

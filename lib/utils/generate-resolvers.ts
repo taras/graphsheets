@@ -10,7 +10,14 @@ import {
   isCompositeType,
   GraphQLNonNull,
   getNamedType,
-  GraphQLList
+  GraphQLList,
+  GraphQLField,
+  GraphQLScalarType,
+  GraphQLInt,
+  GraphQLFloat,
+  GraphQLString,
+  GraphQLBoolean,
+  GraphQLID
 } from "graphql";
 import onlyObjectTypes from "./only-object-types";
 
@@ -55,7 +62,7 @@ export function generateMutationResolvers(
       return assign(
         result,
         isDefinedMutation(typesMap, `create${name}`) && {
-          [`create${name}`]: createRecordResolver(spreadsheet, name)
+          [`create${name}`]: createRecordResolver(spreadsheet, type)
         },
         isDefinedMutation(typesMap, `update${name}`) && {
           [`update${name}`]: updateRecordResolver(spreadsheet, name)
@@ -174,10 +181,14 @@ export function plural(name) {
   return `${name.toLowerCase()}s`;
 }
 
-export function createRecordResolver(spreadsheet: Spreadsheet, type: string) {
+export function createRecordResolver(
+  spreadsheet: Spreadsheet,
+  type: GraphQLObjectType
+) {
+  let { name } = type;
   return function createRecord(root, props, context) {
-    let payload = props[singular(type)];
-    return spreadsheet.createRecord(type, payload);
+    let payload = props[singular(name)];
+    return spreadsheet.createRecord(name, payload);
   };
 }
 

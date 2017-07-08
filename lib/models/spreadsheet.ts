@@ -75,13 +75,13 @@ export default class Spreadsheet {
   ): Promise<Record> {
     let { id } = props;
 
-    if (id) {
-      id = `${id}`;
-    } else {
+    if (!id) {
       id = this.idGenerator.new();
     }
 
-    let data = await this.connector.createRecord(this.id, type, {
+    let sheet = this.sheets[type];
+
+    let data = await this.connector.createRecord(this.id, sheet, {
       ...props,
       id
     });

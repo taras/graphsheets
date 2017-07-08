@@ -1,6 +1,7 @@
 import GoogleSheetsConnector from "../connectors/google-sheets";
 import toNotationMap from "../utils/notation";
 import Spreadsheet from "./spreadsheet";
+import { ISheetHeader } from "../Interfaces";
 
 const { assign } = Object;
 
@@ -12,20 +13,11 @@ export default class Sheet {
   public index: string;
   public hidden: boolean;
   public spreadsheet: Spreadsheet;
-  public headers: string[];
+  public headers: ISheetHeader[];
   public rowCount: number;
   public columnCount: number;
 
-  public columns: { [header: string]: string };
-
-  public get range() {
-    let [first] = this.headers;
-    let [last] = this.headers[this.headers.length - 1];
-    let from = `${this.columns[first]}2`;
-    // TODO? does this need rowCount at the end?
-    let to = `${this.columns[last]}${this.columnCount}`;
-    return `${this.title}!${from}:${to}`;
-  }
+  public columns: Map<string, string>;
 
   /**
    * @param options {}
@@ -42,7 +34,7 @@ export default class Sheet {
     assign(
       this,
       options.headers && {
-        columns: toNotationMap(options.headers)
+        columns: toNotationMap(options.headers.map(({ title }) => title))
       },
       options
     );

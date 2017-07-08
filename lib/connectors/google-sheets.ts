@@ -4,8 +4,10 @@ import {
   GoogleSheets,
   TableQuery
 } from "../adapters/google-sheets";
-import Spreadsheet from "../models/spreadsheet";
+import { ISheetHeader } from "../Interfaces";
 import Record from "../models/record";
+import Sheet from "../models/sheet";
+import Spreadsheet from "../models/spreadsheet";
 import * as DataLoader from "dataloader";
 import zipObject = require("lodash.zipobject");
 
@@ -38,7 +40,7 @@ export default class GoogleSheetsConnector {
     let response = await this.api.get({
       spreadsheetId,
       includeGridData: true,
-      ranges: sheets.map(sheet => `${sheet}!A1:A`)
+      ranges: sheets
     });
 
     let options = deserializeSpreadsheet(response);
@@ -55,12 +57,12 @@ export default class GoogleSheetsConnector {
     return loader.load(id);
   }
 
-  async loadAll(spreadsheetId: string, type: string): Promise<{}[]> {
-    let recordLoader = this.getRecordLoader(spreadsheetId, type);
+  async loadAll(spreadsheetId: string, sheet: string): Promise<{}[]> {
+    let recordLoader = this.getRecordLoader(spreadsheetId, sheet);
     return this.api
       .query({
         spreadsheetId,
-        sheet: type
+        sheet
       })
       .then((response: TableQuery.Response) => {
         let records = deserializeTableQueryResponse(response);
@@ -73,16 +75,33 @@ export default class GoogleSheetsConnector {
 
   async createRecord(
     spreadsheetId: string,
-    type: string,
-    props: { [name: string]: any }
+    sheet: Sheet,
+    params: { [name: string]: string | number | null }
   ): Promise<{ [name: string]: any }> {
-    // TODO:
-    //  1. fetch headers
-    //  2. create batch update
-    //  3. send the update
-    //  4. return the object
+    let values = sheet.headers.map(header => {
+      let { title } = header;
+      if (params.hasOwnProperty(title)) {
+        return params[title];
+      } else {
+        return null;
+      }
+    });
+    let response = await this.api.append({
+      spreadsheetId,
+      range: sheet.title,
+      includeValuesInResponse: true,
+      insertDataOption: GoogleSheets.InsertDataOption.INSERT_ROWS,
+      valueInputOption: GoogleSheets.ValueInputOption.RAW,
+      resource: {
+        majorDimension: GoogleSheets.Dimension.ROWS,
+        values: [values],
+        range: sheet.title
+      }
+    });
 
-    return {};
+    let { updates: { updatedData: { values: responseValues } } } = response;
+
+    return zipObject(sheet.headers, responseValues);
   }
 
   async updateRecord(

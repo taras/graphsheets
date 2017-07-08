@@ -1,7 +1,5 @@
 const alphabet = "abcdefghijklmnopqrstuvwxyz".toUpperCase();
 
-const { assign } = Object;
-
 // FIX: only supports 26 columns
 export function indexToNotation(index) {
   return alphabet[index];
@@ -14,12 +12,8 @@ export function indexToNotation(index) {
  * 
  * @param headers string[]
  */
-export default function toNotationMap(
-  headers: string[]
-): { [header: string]: string } {
-  return headers.reduce((previous, current, index) => {
-    return assign(previous, {
-      [current]: indexToNotation(index)
-    });
-  }, {});
+export default function toNotationMap(headers: string[]): Map<string, string> {
+  return headers.reduce((result, current, index) => {
+    return result.set(current, indexToNotation(index));
+  }, new Map());
 }

@@ -17,3 +17,8 @@ export interface IAuthorizer {
 export interface IFetchHeadersResult {
   [name: string]: string[];
 }
+
+export interface ISheetHeader {
+  title: string;
+  note?: string;
+}

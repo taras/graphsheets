@@ -46,7 +46,6 @@ export default asyncCommand({
     let adapter = new GoogleSheetsAdapter(authorizer);
     let connector = new GoogleSheetsConnector(adapter);
     let spreadsheet = await connector.load(id, keys(objectTypes));
-
     let resolvers = generateResolvers(schema, spreadsheet);
 
     let executableSchema = makeExecutableSchema({
