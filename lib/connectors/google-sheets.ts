@@ -92,7 +92,7 @@ export default class GoogleSheetsConnector {
       range: sheet.title,
       includeValuesInResponse: true,
       insertDataOption: GoogleSheets.InsertDataOption.INSERT_ROWS,
-      valueInputOption: GoogleSheets.ValueInputOption.RAW,
+      valueInputOption: "USER_ENTERED",
       resource: {
         majorDimension: GoogleSheets.Dimension.ROWS,
         values: [values],

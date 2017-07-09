@@ -368,11 +368,11 @@ export namespace GoogleSheets {
     INSERT_ROWS // Rows are inserted for the new data.
   }
 
-  export enum ValueInputOption {
-    INPUT_VALUE_OPTION_UNSPECIFIED, // Default input value. This value must not be used.
-    RAW, // The values the user has entered will not be parsed and will be stored as-is.
-    USER_ENTERED // The values will be parsed as if the user typed them into the UI. Numbers will stay as numbers, but strings may be converted to numbers, dates, etc. following the same rules that are applied when entering text into a cell via the Google Sheets UI.
-  }
+  export type ValueInputOption = "RAW" | "USER_ENTERED";
+  //   INPUT_VALUE_OPTION_UNSPECIFIED, // Default input value. This value must not be used.
+  //   RAW, // The values the user has entered will not be parsed and will be stored as-is.
+  //   USER_ENTERED // The values will be parsed as if the user typed them into the UI. Numbers will stay as numbers, but strings may be converted to numbers, dates, etc. following the same rules that are applied when entering text into a cell via the Google Sheets UI.
+  // }
   export interface UpdateValuesResponse {
     spreadsheetId: string;
     updatedRange: string;
