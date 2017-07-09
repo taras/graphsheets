@@ -373,9 +373,9 @@ describe("generateResolvers", () => {
         });
 
         describe("relationship fields", () => {
-          let spreadsheet;
+          let spreadsheet, schema;
           beforeEach(() => {
-            const schema = buildSchemaFromTypeDefinitions(`
+            schema = buildSchemaFromTypeDefinitions(`
               type Person {
                 id: String!
                 firstName: String
@@ -399,25 +399,69 @@ describe("generateResolvers", () => {
             spreadsheet = {
               createRecord: jest.fn()
             };
-            let resolvers = generateResolvers(schema, spreadsheet);
-            resolvers.Mutation.createPerson(
-              {},
-              {
-                person: { id: "taras" }
-              }
-            );
           });
-          it("generates relationship formulas and passes them to createRecod", () => {
-            assert.deepEqual(spreadsheet.createRecord.mock.calls[0], [
-              "Person",
-              {
-                id: "taras",
-                father:
-                  "=JOIN(\",\", QUERY(RELATIONSHIPS!A:F, \"SELECT F WHERE B='Person' AND C='taras' AND D='Person' and E='father'\"))",
-                siblings:
-                  "=JOIN(\",\", QUERY(RELATIONSHIPS!A:F, \"SELECT F WHERE B='Person' AND C='taras' AND D='Person' and E='siblings'\"))"
-              }
-            ]);
+          describe("without relationship data being passed in", () => {
+            beforeEach(() => {
+              let resolvers = generateResolvers(schema, spreadsheet);
+              resolvers.Mutation.createPerson(
+                {},
+                {
+                  person: { id: "taras" }
+                }
+              );
+            });
+            it("generates relationship formulas and passes them to createRecod", () => {
+              assert.deepEqual(spreadsheet.createRecord.mock.calls[0], [
+                "Person",
+                {
+                  id: "taras",
+                  father:
+                    "=JOIN(\",\", QUERY(RELATIONSHIPS!A:F, \"SELECT F WHERE B='Person' AND C='taras' AND D='Person' and E='father'\"))",
+                  siblings:
+                    "=JOIN(\",\", QUERY(RELATIONSHIPS!A:F, \"SELECT F WHERE B='Person' AND C='taras' AND D='Person' and E='siblings'\"))"
+                }
+              ]);
+            });
+          });
+          describe("with relationship data passed-in", () => {
+            beforeEach(() => {
+              spreadsheet = {
+                newId: jest
+                  .fn()
+                  .mockReturnValueOnce("taras")
+                  .mockReturnValueOnce("serge")
+                  .mockReturnValueOnce("lida"),
+                createRecord: jest.fn((type, { id, firstName }) => {
+                  return Promise.resolve({ id, firstName });
+                })
+              };
+              let resolvers = generateResolvers(schema, spreadsheet);
+              resolvers.Mutation.createPerson(
+                {},
+                {
+                  person: {
+                    firstName: "taras",
+                    father: {
+                      firstName: "serge"
+                    },
+                    siblings: [{ firstName: "lida" }]
+                  }
+                }
+              );
+            });
+            it("writes relationship formulas and not the passed in arguments", () => {
+              assert.deepEqual(spreadsheet.createRecord.mock.calls[0], [
+                "Person",
+                {
+                  firstName: "taras",
+                  father:
+                    "=JOIN(\",\", QUERY(RELATIONSHIPS!A:F, \"SELECT F WHERE B='Person' AND C='taras' AND D='Person' and E='father'\"))",
+                  id: "taras",
+                  siblings:
+                    "=JOIN(\",\", QUERY(RELATIONSHIPS!A:F, \"SELECT F WHERE B='Person' AND C='taras' AND D='Person' and E='siblings'\"))"
+                }
+              ]);
+            });
           });
         });
       });

@@ -205,8 +205,8 @@ export function createRecordResolver(
 
     return spreadsheet.createRecord(name, {
       id,
-      ...relationshipFields,
-      ...payload
+      ...payload,
+      ...relationshipFields
     });
   };
 }
