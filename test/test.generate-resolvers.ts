@@ -424,19 +424,20 @@ describe("generateResolvers", () => {
             });
           });
           describe("with relationship data passed-in", () => {
-            beforeEach(() => {
+            let result;
+            beforeEach(async () => {
               spreadsheet = {
                 newId: jest
                   .fn()
                   .mockReturnValueOnce("taras")
                   .mockReturnValueOnce("serge")
                   .mockReturnValueOnce("lida"),
-                createRecord: jest.fn((type, { id, firstName }) => {
-                  return Promise.resolve({ id, firstName });
+                createRecord: jest.fn((type, props) => {
+                  return Promise.resolve({ ...props });
                 })
               };
               let resolvers = generateResolvers(schema, spreadsheet);
-              resolvers.Mutation.createPerson(
+              result = await resolvers.Mutation.createPerson(
                 {},
                 {
                   person: {
@@ -446,8 +447,33 @@ describe("generateResolvers", () => {
                     },
                     siblings: [{ firstName: "lida" }]
                   }
-                }
+                },
+                {}
               );
+            });
+            it("returns an object with composed references", () => {
+              assert.deepEqual(result, {
+                id: "taras",
+                firstName: "taras",
+                father: {
+                  father:
+                    "=JOIN(\",\", QUERY(RELATIONSHIPS!A:F, \"SELECT F WHERE B='Person' AND C='serge' AND D='Person' and E='father'\"))",
+                  id: "serge",
+                  firstName: "serge",
+                  siblings:
+                    "=JOIN(\",\", QUERY(RELATIONSHIPS!A:F, \"SELECT F WHERE B='Person' AND C='serge' AND D='Person' and E='siblings'\"))"
+                },
+                siblings: [
+                  {
+                    firstName: "lida",
+                    id: "lida",
+                    father:
+                      "=JOIN(\",\", QUERY(RELATIONSHIPS!A:F, \"SELECT F WHERE B='Person' AND C='lida' AND D='Person' and E='father'\"))",
+                    siblings:
+                      "=JOIN(\",\", QUERY(RELATIONSHIPS!A:F, \"SELECT F WHERE B='Person' AND C='lida' AND D='Person' and E='siblings'\"))"
+                  }
+                ]
+              });
             });
             it("writes relationship formulas and not the passed in arguments", () => {
               assert.deepEqual(spreadsheet.createRecord.mock.calls[0], [

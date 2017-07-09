@@ -12,7 +12,7 @@
   "scripts": {
     "pretest": "npm run compile",
     "test": "npm run mocha",
-    "mocha": "mocha test/ --recursive -t 10000 -S -R spec --require source-map-support/register --require intelli-espower-loader",
+    "mocha": "mocha test/ --trace-warnings --recursive -t 10000 -S -R spec --require source-map-support/register --require intelli-espower-loader",
     "compile": "tsc",
     "prepublish": "npm run compile",
     "precommit": "lint-staged",
@@ -60,6 +60,7 @@
     "mocha": "^3.4.2",
     "power-assert": "^1.4.4",
     "prettier": "^1.5.0",
+    "rsvp": "^3.6.1",
     "short-uuid": "^2.3.3",
     "typescript": "^2.3.4",
     "util.promisify": "^1.0.0",

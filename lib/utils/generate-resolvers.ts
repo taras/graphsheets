@@ -21,6 +21,7 @@ import {
   GraphQLFieldMap
 } from "graphql";
 import onlyObjectTypes from "./only-object-types";
+import waitForAllProperties from "./wait-for-all-properties";
 
 const { assign, keys } = Object;
 
@@ -187,10 +188,10 @@ export function createRecordResolver(
   type: GraphQLObjectType
 ) {
   let { name } = type;
-  return function createRecord(root, props, context) {
-    let payload = props[singular(name)];
+  return async function createRecord(root, payload, context) {
+    let params = payload[singular(name)];
 
-    let { id } = payload;
+    let { id } = params;
 
     if (!id) {
       id = spreadsheet.newId();
@@ -203,11 +204,58 @@ export function createRecordResolver(
       return generateRelationshipFormula(type.name, id, target.name, propName);
     });
 
-    return spreadsheet.createRecord(name, {
+    let record = await spreadsheet.createRecord(name, {
       id,
-      ...payload,
+      ...params,
       ...relationshipFields
     });
+
+    if (!record) {
+      return;
+    }
+
+    let composed = reduceObject(fields, (result, propName, field) => {
+      if (params[propName] !== undefined) {
+        let type = getFieldType(field);
+        let createRecord = createRecordResolver(spreadsheet, type);
+        let value = params[propName];
+        if (field.type instanceof GraphQLList) {
+          if (value instanceof Array) {
+            return assign(result, {
+              [propName]: value.map(item => {
+                return createRecord(
+                  record,
+                  {
+                    [singular(type.name)]: item
+                  },
+                  context
+                );
+              })
+            });
+          } else {
+            throw new Error(`${propName} must be an array to create ${type}`);
+          }
+        } else {
+          if (typeof value === "object") {
+            return assign(result, {
+              [propName]: createRecord(
+                record,
+                {
+                  [singular(type.name)]: value
+                },
+                context
+              )
+            });
+          } else {
+            throw new Error(`${propName} must be an object to create ${type}`);
+          }
+        }
+      } else {
+        return result;
+      }
+    });
+
+    return assign(record, await waitForAllProperties(composed));
   };
 }
 
