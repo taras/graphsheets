@@ -9,7 +9,7 @@ import Record from "../models/record";
 import Sheet from "../models/sheet";
 import Spreadsheet from "../models/spreadsheet";
 import * as DataLoader from "dataloader";
-import zipObject = require("lodash.zipobject");
+import * as zipObject from "lodash.zipobject";
 
 const { assign } = Object;
 export default class GoogleSheetsConnector {
@@ -78,10 +78,11 @@ export default class GoogleSheetsConnector {
     sheet: Sheet,
     params: { [name: string]: string | number | null }
   ): Promise<{ [name: string]: any }> {
-    let values = sheet.headers.map(header => {
-      let { title } = header;
-      if (params.hasOwnProperty(title)) {
-        return params[title];
+    let fieldNames = sheet.headers.map(({ title }) => title);
+
+    let values = fieldNames.map(fieldName => {
+      if (params.hasOwnProperty(fieldName)) {
+        return params[fieldName];
       } else {
         return null;
       }
@@ -101,7 +102,9 @@ export default class GoogleSheetsConnector {
 
     let { updates: { updatedData: { values: responseValues } } } = response;
 
-    return zipObject(sheet.headers, responseValues);
+    let [writtenValues] = responseValues;
+
+    return zipObject(fieldNames, writtenValues);
   }
 
   async updateRecord(
