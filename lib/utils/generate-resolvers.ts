@@ -17,7 +17,8 @@ import {
   GraphQLFloat,
   GraphQLString,
   GraphQLBoolean,
-  GraphQLID
+  GraphQLID,
+  GraphQLFieldMap
 } from "graphql";
 import onlyObjectTypes from "./only-object-types";
 
@@ -143,7 +144,7 @@ export function generateQueryResolvers(
   );
 }
 
-export function onlyComposite(fields) {
+export function onlyComposite(fields: GraphQLFieldMap<any, any>) {
   return filterObject(fields, (propName, field) => {
     return isCompositeType(getFieldType(field));
   });
@@ -188,8 +189,35 @@ export function createRecordResolver(
   let { name } = type;
   return function createRecord(root, props, context) {
     let payload = props[singular(name)];
-    return spreadsheet.createRecord(name, payload);
+
+    let { id } = payload;
+
+    if (!id) {
+      id = spreadsheet.newId();
+    }
+
+    let fields = onlyComposite(type.getFields());
+
+    let relationshipFields = mapObject(fields, (propName, field) => {
+      let target = getFieldType(field);
+      return generateRelationshipFormula(type.name, id, target.name, propName);
+    });
+
+    return spreadsheet.createRecord(name, {
+      id,
+      ...relationshipFields,
+      ...payload
+    });
   };
+}
+
+export function generateRelationshipFormula(
+  from: string,
+  id: string,
+  on: string,
+  to: string
+) {
+  return `=JOIN(",", QUERY(RELATIONSHIPS!A:F, "SELECT F WHERE B='${from}' AND C='${id}' AND D='${on}' and E='${to}'"))`;
 }
 
 export function updateRecordResolver(spreadsheet: Spreadsheet, type: string) {

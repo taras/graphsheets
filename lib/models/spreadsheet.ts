@@ -37,6 +37,10 @@ export default class Spreadsheet {
     }
   }
 
+  newId() {
+    return this.idGenerator.new();
+  }
+
   async findRecord(type: string, id: string): Promise<Record> {
     let data = await this.connector.loadRecord(this.id, type, id);
 
@@ -73,18 +77,10 @@ export default class Spreadsheet {
     type: string,
     props: { [name: string]: any }
   ): Promise<Record> {
-    let { id } = props;
-
-    if (!id) {
-      id = this.idGenerator.new();
-    }
-
+    // TODO: Add exception when ID is not created
     let sheet = this.sheets[type];
 
-    let data = await this.connector.createRecord(this.id, sheet, {
-      ...props,
-      id
-    });
+    let data = await this.connector.createRecord(this.id, sheet, props);
 
     return new Record({ connector: this.connector, ...data });
   }
