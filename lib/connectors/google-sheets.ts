@@ -91,8 +91,9 @@ export default class GoogleSheetsConnector {
       spreadsheetId,
       range: sheet.title,
       includeValuesInResponse: true,
-      insertDataOption: GoogleSheets.InsertDataOption.INSERT_ROWS,
       valueInputOption: "USER_ENTERED",
+      insertDataOption: "INSERT_ROWS",
+      responseValueRenderOption: "FORMATTED_VALUE",
       resource: {
         majorDimension: GoogleSheets.Dimension.ROWS,
         values: [values],
@@ -156,6 +157,7 @@ export default class GoogleSheetsConnector {
           ids
         })
         .then((response: TableQuery.Response) => {
+          console.log(response);
           return deserializeTableQueryResponse(response);
         });
     };

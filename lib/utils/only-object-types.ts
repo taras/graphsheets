@@ -1,7 +1,9 @@
 import { filterObject } from "./object-utils";
 import { GraphQLObjectType } from "graphql";
 
-export default function onlyObjectTypes(typesMap) {
+export type ObjectTypeMap = { [typeName: string]: GraphQLObjectType };
+
+export default function onlyObjectTypes(typesMap): ObjectTypeMap {
   return filterObject(
     typesMap,
     (name, type) =>

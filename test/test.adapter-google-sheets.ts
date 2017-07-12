@@ -3,7 +3,7 @@ import * as jest from "jest-mock";
 
 import { stripBadResponse } from "../lib/adapters/google-sheets";
 
-describe("GoogleSheetsAdapter", () => {
+describe("adapters/google-sheets", () => {
   describe("stripBadResponse", () => {
     let result;
     beforeEach(() => {

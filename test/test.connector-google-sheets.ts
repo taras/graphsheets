@@ -13,7 +13,7 @@ import Spreadsheet from "../lib/models/spreadsheet";
 import spreadsheetFixture from "./fixtures/spreadsheet";
 import tableQueryFixture from "./fixtures/table-query";
 
-describe("GoogleSheetsConnector", () => {
+describe("connectors/google-sheets", () => {
   describe("load", () => {
     class StubAuthorizer implements IAuthorizer {
       public isAuthorized = true;
@@ -123,31 +123,31 @@ describe("GoogleSheetsConnector", () => {
       ]);
     });
   });
-});
 
-describe("deserializeTableQueryResponse", () => {
-  beforeEach(() => {
-    this.result = deserializeTableQueryResponse(tableQueryFixture);
-  });
+  describe("deserializeTableQueryResponse", () => {
+    beforeEach(() => {
+      this.result = deserializeTableQueryResponse(tableQueryFixture);
+    });
 
-  it("produces an array of object", () => {
-    assert.deepEqual(this.result, [
-      {
-        id: 1,
-        firstName: "Taras",
-        lastName: "Mankovski",
-        products: "2,3,5",
-        fullName: "Taras Mankovski",
-        productsCount: 3
-      },
-      {
-        id: 2,
-        firstName: "Michael",
-        lastName: "Luskind",
-        products: "1,4",
-        fullName: "Michael Luskind",
-        productsCount: 2
-      }
-    ]);
+    it("produces an array of object", () => {
+      assert.deepEqual(this.result, [
+        {
+          id: 1,
+          firstName: "Taras",
+          lastName: "Mankovski",
+          products: "2,3,5",
+          fullName: "Taras Mankovski",
+          productsCount: 3
+        },
+        {
+          id: 2,
+          firstName: "Michael",
+          lastName: "Luskind",
+          products: "1,4",
+          fullName: "Michael Luskind",
+          productsCount: 2
+        }
+      ]);
+    });
   });
 });

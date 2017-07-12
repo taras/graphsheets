@@ -18,10 +18,19 @@ import {
   GraphQLString,
   GraphQLBoolean,
   GraphQLID,
-  GraphQLFieldMap
+  GraphQLFieldMap,
+  GraphQLCompositeType,
+  GraphQLFieldConfigMap
 } from "graphql";
 import onlyObjectTypes from "./only-object-types";
-import waitForAllProperties from "./wait-for-all-properties";
+import allProperties from "./wait-for-all-properties";
+import {
+  isDefinedMutation,
+  TypeMap,
+  isDefinedQuery,
+  onlyComposite,
+  getFieldType
+} from "./type-map-utils";
 
 const { assign, keys } = Object;
 
@@ -40,19 +49,19 @@ const { assign, keys } = Object;
  * @param spreadsheet Spreadsheet
  */
 export default function generateResolvers(schema: GraphQLSchema, spreadsheet) {
-  let typesMap = schema.getTypeMap();
+  let typeMap = schema.getTypeMap();
 
-  let queries = generateQueryResolvers(typesMap, spreadsheet);
-  let mutations = generateMutationResolvers(typesMap, spreadsheet);
+  let queries = generateQueryResolvers(typeMap, spreadsheet);
+  let mutations = generateMutationResolvers(typeMap, spreadsheet);
 
   return assign({}, queries, mutations);
 }
 
 export function generateMutationResolvers(
-  typesMap: { [typeName: string]: GraphQLNamedType },
+  typeMap: TypeMap,
   spreadsheet: Spreadsheet
 ): { Mutation?: { [name: string]: (root, args, context) => any } } {
-  let objectTypes = onlyObjectTypes(typesMap);
+  let objectTypes = onlyObjectTypes(typeMap);
 
   let Mutation = reduceObject(
     objectTypes,
@@ -63,13 +72,13 @@ export function generateMutationResolvers(
     ) => {
       return assign(
         result,
-        isDefinedMutation(typesMap, `create${name}`) && {
+        isDefinedMutation(typeMap, `create${name}`) && {
           [`create${name}`]: createRecordResolver(spreadsheet, type)
         },
-        isDefinedMutation(typesMap, `update${name}`) && {
+        isDefinedMutation(typeMap, `update${name}`) && {
           [`update${name}`]: updateRecordResolver(spreadsheet, name)
         },
-        isDefinedMutation(typesMap, `delete${name}`) && {
+        isDefinedMutation(typeMap, `delete${name}`) && {
           [`delete${name}`]: deleteRecordResolver(spreadsheet, name)
         }
       );
@@ -84,10 +93,10 @@ export function generateMutationResolvers(
 }
 
 export function generateQueryResolvers(
-  typesMap: { [typeName: string]: GraphQLNamedType },
+  typeMap: TypeMap,
   spreadsheet: Spreadsheet
 ) {
-  let objectTypes = onlyObjectTypes(typesMap);
+  let objectTypes = onlyObjectTypes(typeMap);
 
   let Query = reduceObject(
     objectTypes,
@@ -101,10 +110,10 @@ export function generateQueryResolvers(
 
       return assign(
         result,
-        isDefinedQuery(typesMap, singularName) && {
+        isDefinedQuery(typeMap, singularName) && {
           [singularName]: singularResolver(spreadsheet, name, type)
         },
-        isDefinedQuery(typesMap, pluralName) && {
+        isDefinedQuery(typeMap, pluralName) && {
           [pluralName]: pluralResolver(spreadsheet, name, type)
         }
       );
@@ -143,35 +152,6 @@ export function generateQueryResolvers(
     },
     rootTypes
   );
-}
-
-export function onlyComposite(fields: GraphQLFieldMap<any, any>) {
-  return filterObject(fields, (propName, field) => {
-    return isCompositeType(getFieldType(field));
-  });
-}
-
-export function getFieldType(field) {
-  let { type } = field;
-  if (type instanceof GraphQLNonNull || type instanceof GraphQLList) {
-    return getNamedType(type);
-  } else {
-    return type;
-  }
-}
-
-export function isDefinedQuery(typesMap, name: string): boolean {
-  let { Query } = typesMap;
-  let fields = Query.getFields();
-  return !!fields[name];
-}
-
-export function isDefinedMutation(typesMap, name: string): boolean {
-  let { Mutation } = typesMap;
-  if (Mutation) {
-    let fields = Mutation.getFields();
-    return !!fields[name];
-  }
 }
 
 export function singular(name: string) {
@@ -214,49 +194,71 @@ export function createRecordResolver(
       return;
     }
 
-    let composed = reduceObject(fields, (result, propName, field) => {
-      if (params[propName] !== undefined) {
-        let type = getFieldType(field);
-        let createRecord = createRecordResolver(spreadsheet, type);
-        let value = params[propName];
-        if (field.type instanceof GraphQLList) {
-          if (value instanceof Array) {
-            return assign(result, {
-              [propName]: value.map(item => {
-                return createRecord(
-                  record,
-                  {
-                    [singular(type.name)]: item
-                  },
-                  context
-                );
-              })
-            });
-          } else {
-            throw new Error(`${propName} must be an array to create ${type}`);
-          }
-        } else {
-          if (typeof value === "object") {
-            return assign(result, {
-              [propName]: createRecord(
-                record,
-                {
-                  [singular(type.name)]: value
-                },
-                context
-              )
-            });
-          } else {
-            throw new Error(`${propName} must be an object to create ${type}`);
-          }
-        }
-      } else {
-        return result;
-      }
-    });
+    let composed = createComposed(spreadsheet, record, fields, params, context);
 
-    return assign(record, await waitForAllProperties(composed));
+    let references = await allProperties(composed);
+
+    return assign(record, references);
   };
+}
+
+export function saveRelationships() {}
+
+export function createComposed(
+  spreadsheet: Spreadsheet,
+  record: Record,
+  fields: GraphQLFieldMap<string, GraphQLCompositeType>,
+  params: { [fieldName: string]: any },
+  context: { [propName: string]: any }
+) {
+  return {};
+  // return reduceObject(
+  //   fields,
+  //   (
+  //     result,
+  //     propName: string,
+  //     field: GraphQLField<string, GraphQLCompositeType>
+  //   ) => {
+  //     if (params[propName] !== undefined) {
+  //       let type = getFieldType(field);
+  //       let createRecord = createRecordResolver(spreadsheet, type);
+  //       let value = params[propName];
+  //       if (field.type instanceof GraphQLList) {
+  //         if (value instanceof Array) {
+  //           return assign(result, {
+  //             [propName]: value.map(item => {
+  //               return createRecord(
+  //                 record,
+  //                 {
+  //                   [singular(type.name)]: item
+  //                 },
+  //                 context
+  //               );
+  //             })
+  //           });
+  //         } else {
+  //           throw new Error(`${propName} must be an array to create ${type}`);
+  //         }
+  //       } else {
+  //         if (typeof value === "object") {
+  //           return assign(result, {
+  //             [propName]: createRecord(
+  //               record,
+  //               {
+  //                 [singular(type.name)]: value
+  //               },
+  //               context
+  //             )
+  //           });
+  //         } else {
+  //           throw new Error(`${propName} must be an object to create ${type}`);
+  //         }
+  //       }
+  //     } else {
+  //       return result;
+  //     }
+  //   }
+  // );
 }
 
 export function generateRelationshipFormula(

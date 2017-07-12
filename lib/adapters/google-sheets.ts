@@ -86,7 +86,7 @@ export function stripBadResponse(str: string): string {
 }
 
 export function buildSQLQuery(ids: string[]) {
-  let where = ids.map(id => `B='${id}'`).join(" OR ");
+  let where = ids.map(id => `A='${id}'`).join(" OR ");
   return `SELECT * WHERE ${where}`;
 }
 
@@ -102,6 +102,7 @@ export interface AppendRequest {
   range: string;
   includeValuesInResponse: boolean;
   insertDataOption: GoogleSheets.InsertDataOption;
+  responseValueRenderOption: GoogleSheets.ValueRenderOption;
   resource: GoogleSheets.ValueRange;
   valueInputOption: GoogleSheets.ValueInputOption;
 }
@@ -357,22 +358,22 @@ export namespace GoogleSheets {
     FORMATTED_STRING // Instructs date, time, datetime, and duration fields to be output as strings in their given number format (which is dependent on the spreadsheet locale).
   }
 
-  export enum ValueRenderOption {
-    FORMATTED_VALUE, // Values will be calculated & formatted in the reply according to the cell's formatting. Formatting is based on the spreadsheet's locale, not the requesting user's locale. For example, if A1 is 1.23 and A2 is =A1 and formatted as currency, then A2 would return "$1.23".
-    UNFORMATTED_VALUE, // Values will be calculated, but not formatted in the reply. For example, if A1 is 1.23 and A2 is =A1 and formatted as currency, then A2 would return the number 1.23.
-    FORMULA // Values will not be calculated. The reply will include the formulas. For example, if A1 is 1.23 and A2 is =A1 and formatted as currency, then A2 would return "=A1".
-  }
+  export type ValueRenderOption =
+    | "FORMATTED_VALUE"
+    | "UNFORMATTED_VALUE"
+    | "FORMULA";
+  // FORMATTED_VALUE - Values will be calculated & formatted in the reply according to the cell's formatting. Formatting is based on the spreadsheet's locale, not the requesting user's locale. For example, if A1 is 1.23 and A2 is =A1 and formatted as currency, then A2 would return "$1.23".
+  // UNFORMATTED_VALUE - Values will be calculated, but not formatted in the reply. For example, if A1 is 1.23 and A2 is =A1 and formatted as currency, then A2 would return the number 1.23.
+  // FORMULA - Values will not be calculated. The reply will include the formulas. For example, if A1 is 1.23 and A2 is =A1 and formatted as currency, then A2 would return "=A1".
 
-  export enum InsertDataOption {
-    OVERWRITE, // The new data overwrites existing data in the areas it is written. (Note: adding data to the end of the sheet will still insert new rows or columns so the data can be written.)
-    INSERT_ROWS // Rows are inserted for the new data.
-  }
+  export type InsertDataOption = "OVERWRITE" | "INSERT_ROWS";
+  //OVERWRITE - The new data overwrites existing data in the areas it is written. (Note: adding data to the end of the sheet will still insert new rows or columns so the data can be written.)
+  //INSERT_ROWS - Rows are inserted for the new data.
 
   export type ValueInputOption = "RAW" | "USER_ENTERED";
   //   INPUT_VALUE_OPTION_UNSPECIFIED, // Default input value. This value must not be used.
   //   RAW, // The values the user has entered will not be parsed and will be stored as-is.
   //   USER_ENTERED // The values will be parsed as if the user typed them into the UI. Numbers will stay as numbers, but strings may be converted to numbers, dates, etc. following the same rules that are applied when entering text into a cell via the Google Sheets UI.
-  // }
   export interface UpdateValuesResponse {
     spreadsheetId: string;
     updatedRange: string;

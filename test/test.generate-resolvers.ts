@@ -1,17 +1,17 @@
 import * as assert from "power-assert";
 import { buildSchemaFromTypeDefinitions } from "graphql-tools";
 import * as jest from "jest-mock";
+import { default as generateResolvers } from "../lib/utils/generate-resolvers";
+import onlyObjectTypes from "../lib/utils/only-object-types";
 import {
   isDefinedQuery,
   onlyComposite,
-  default as generateResolvers,
   isDefinedMutation
-} from "../lib/utils/generate-resolvers";
-import onlyObjectTypes from "../lib/utils/only-object-types";
+} from "../lib/utils/type-map-utils";
 
 const { keys } = Object;
 
-describe("generateResolvers", () => {
+describe("utils/generate-resolvers", () => {
   describe("root queries", () => {
     let schema, spreadsheet, result;
     describe("are optional", () => {
@@ -117,23 +117,6 @@ describe("generateResolvers", () => {
       it("returned findRecord return value", async () => {
         assert.deepEqual(result, [{ id: "hello" }, { id: "world" }]);
       });
-    });
-  });
-
-  describe("isDefinedQuery", () => {
-    let schema, typesMap;
-    beforeEach(() => {
-      schema = buildSchemaFromTypeDefinitions(`
-      type Query {
-        hello: String
-      }
-    `);
-      typesMap = schema.getTypeMap();
-    });
-
-    it("detects correctly", () => {
-      assert.ok(isDefinedQuery(typesMap, "hello") === true);
-      assert.ok(isDefinedQuery(typesMap, "world") === false);
     });
   });
 
@@ -245,40 +228,6 @@ describe("generateResolvers", () => {
       });
     });
   });
-
-  describe("onlyComposite", () => {
-    let result;
-    const schema = buildSchemaFromTypeDefinitions(`
-      type Person {
-        id: String!
-      }
-
-      type Product {
-        id: String!
-        owner: Person
-        creator: Person!
-        inPackage: [Product]
-      }
-
-      type Query {
-        person(id: String!): Person
-      }
-    `);
-    beforeEach(() => {
-      let typeMap = schema.getTypeMap();
-      let Product = onlyObjectTypes(typeMap).Product;
-      result = onlyComposite(Product.getFields());
-    });
-    it("returns only 3 items", () => {
-      assert.equal(keys(result).length, 3);
-    });
-    it("returns 3 composite fields", () => {
-      assert.ok(result.owner);
-      assert.ok(result.creator);
-      assert.ok(result.inPackage);
-    });
-  });
-
   describe("Mutation", () => {
     const typeDefs = `
       type Person {
@@ -291,30 +240,6 @@ describe("generateResolvers", () => {
         person: Person
       }
     `;
-
-    describe("isDefinedMutation", () => {
-      let schema, typesMap;
-      beforeEach(() => {
-        schema = buildSchemaFromTypeDefinitions(`
-          ${typeDefs}
-
-          input PersonInput {
-            firstName: String
-            lastName: String
-          }
-
-          type Mutation {
-            createPerson(person: PersonInput): Person
-          }
-        `);
-        typesMap = schema.getTypeMap();
-      });
-
-      it("detects registered mutations", () => {
-        assert.ok(isDefinedMutation(typesMap, "createPerson"));
-        assert.ok(!isDefinedMutation(typesMap, "updatePerson"));
-      });
-    });
 
     describe("createRecordResolver", () => {
       let result;
