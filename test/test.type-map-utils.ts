@@ -19,7 +19,7 @@ import {
 
 const { keys } = Object;
 
-describe("utils/type-map-utils", () => {
+describe.only("utils/type-map-utils", () => {
   describe("isDefinedMutation", () => {
     let schema, typesMap;
     beforeEach(() => {
@@ -101,7 +101,7 @@ describe("utils/type-map-utils", () => {
       assert.ok(result.inPackage);
     });
   });
-  describe("reduceFieldMap", () => {
+  describe("reduceTypeMap", () => {
     let result, callback;
     beforeEach(() => {
       let typeDefs = `
