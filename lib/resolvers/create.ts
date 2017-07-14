@@ -19,23 +19,30 @@ export default function createRecordResolver(
 ) {
   let { name } = type;
   return async function createRecord(_, payload: Payload, context) {
-    let generateId = () => {
-      return spreadsheet.newId();
-    };
-    return reduceMutationArguments(
-      mutation,
-      (result, argName, argType: GraphQLInputObjectType, argInfo) => {
-        let root = get(argName, payload);
-        if (root) {
-          return {
-            ...result,
-            [argName]: inputTraverser(argType, root, { generateId })
-          };
-        }
-        return result;
-      }
-    );
+    let withIds = injectIds(mutation, payload, {
+      generateId: () => spreadsheet.newId()
+    });
+
+    return withIds;
   };
+}
+
+export function extractRelationships(mutation, withIds) {}
+
+export function injectIds(mutation, payload, actions) {
+  return reduceMutationArguments(
+    mutation,
+    (result, argName, argType: GraphQLInputObjectType, argInfo) => {
+      let root = get(argName, payload);
+      if (root) {
+        return {
+          ...result,
+          [argName]: inputTraverser(argType, root, actions)
+        };
+      }
+      return result;
+    }
+  );
 }
 
 type Payload = { [name: string]: any };
