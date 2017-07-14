@@ -11,7 +11,11 @@ import { buildSchemaFromTypeDefinitions } from "graphql-tools";
 import * as jest from "jest-mock";
 import * as assert from "power-assert";
 import onlyObjectTypes from "../lib/utils/only-object-types";
-import { GraphQLInputObjectType, GraphQLObjectType } from "graphql";
+import {
+  GraphQLInputObjectType,
+  GraphQLNamedType,
+  GraphQLObjectType
+} from "graphql";
 
 const { keys } = Object;
 
@@ -85,7 +89,7 @@ describe("utils/type-map-utils", () => {
     `);
     beforeEach(() => {
       let typeMap = schema.getTypeMap();
-      let Product = onlyObjectTypes(typeMap).Product;
+      let Product = schema.getType("Product") as GraphQLObjectType;
       result = onlyComposite(Product.getFields());
     });
     it("returns only 3 items", () => {

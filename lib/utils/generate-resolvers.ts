@@ -1,36 +1,26 @@
 import Spreadsheet from "../models/spreadsheet";
 import Record from "../models/record";
-import { filterObject, reduceObject, mapObject } from "./object-utils";
-
-import { IResolvers } from "graphql-tools/dist/Interfaces";
-import {
-  GraphQLSchema,
-  GraphQLObjectType,
-  GraphQLNamedType,
-  isCompositeType,
-  GraphQLNonNull,
-  getNamedType,
-  GraphQLList,
-  GraphQLField,
-  GraphQLScalarType,
-  GraphQLInt,
-  GraphQLFloat,
-  GraphQLString,
-  GraphQLBoolean,
-  GraphQLID,
-  GraphQLFieldMap,
-  GraphQLCompositeType,
-  GraphQLFieldConfigMap
-} from "graphql";
+import { filterObject, mapObject, reduceObject } from "./object-utils";
 import onlyObjectTypes from "./only-object-types";
-import allProperties from "./wait-for-all-properties";
 import {
+  getFieldType,
   isDefinedMutation,
-  TypeMap,
   isDefinedQuery,
   onlyComposite,
-  getFieldType
+  reduceInputObjectTypeCallback,
+  reduceMutationArguments,
+  TypeMap,
+  getMutation
 } from "./type-map-utils";
+import allProperties from "./wait-for-all-properties";
+import {
+  GraphQLNamedType,
+  GraphQLList,
+  GraphQLField,
+  GraphQLSchema,
+  GraphQLObjectType
+} from "graphql";
+import createRecordResolver from "../resolvers/create";
 
 const { assign, keys } = Object;
 
@@ -73,7 +63,11 @@ export function generateMutationResolvers(
       return assign(
         result,
         isDefinedMutation(typeMap, `create${name}`) && {
-          [`create${name}`]: createRecordResolver(spreadsheet, type)
+          [`create${name}`]: createRecordResolver(
+            spreadsheet,
+            type,
+            getMutation(typeMap, `create${name}`)
+          )
         },
         isDefinedMutation(typeMap, `update${name}`) && {
           [`update${name}`]: updateRecordResolver(spreadsheet, name)
@@ -101,9 +95,9 @@ export function generateQueryResolvers(
   let Query = reduceObject(
     objectTypes,
     (
-      result: { [name: string]: GraphQLObjectType },
+      result: { [name: string]: GraphQLNamedType },
       name: string,
-      type: GraphQLObjectType
+      type: GraphQLNamedType
     ) => {
       let singularName = singular(name);
       let pluralName = plural(name);
@@ -123,7 +117,7 @@ export function generateQueryResolvers(
   let rootTypes = reduceObject(
     objectTypes,
     (
-      result: { [name: string]: GraphQLObjectType },
+      result: { [name: string]: GraphQLNamedType },
       name: string,
       type: GraphQLObjectType
     ) => {
@@ -161,104 +155,6 @@ export function singular(name: string) {
 export function plural(name) {
   // TODO: replace this with the inflector
   return `${name.toLowerCase()}s`;
-}
-
-export function createRecordResolver(
-  spreadsheet: Spreadsheet,
-  type: GraphQLObjectType
-) {
-  let { name } = type;
-  return async function createRecord(root, payload, context) {
-    let params = payload[singular(name)];
-
-    let { id } = params;
-
-    if (!id) {
-      id = spreadsheet.newId();
-    }
-
-    let fields = onlyComposite(type.getFields());
-
-    let relationshipFields = mapObject(fields, (propName, field) => {
-      let target = getFieldType(field);
-      return generateRelationshipFormula(type.name, id, target.name, propName);
-    });
-
-    let record = await spreadsheet.createRecord(name, {
-      id,
-      ...params,
-      ...relationshipFields
-    });
-
-    if (!record) {
-      return;
-    }
-
-    let composed = createComposed(spreadsheet, record, fields, params, context);
-
-    let references = await allProperties(composed);
-
-    return assign(record, references);
-  };
-}
-
-export function saveRelationships() {}
-
-export function createComposed(
-  spreadsheet: Spreadsheet,
-  record: Record,
-  fields: GraphQLFieldMap<string, GraphQLCompositeType>,
-  params: { [fieldName: string]: any },
-  context: { [propName: string]: any }
-) {
-  return {};
-  // return reduceObject(
-  //   fields,
-  //   (
-  //     result,
-  //     propName: string,
-  //     field: GraphQLField<string, GraphQLCompositeType>
-  //   ) => {
-  //     if (params[propName] !== undefined) {
-  //       let type = getFieldType(field);
-  //       let createRecord = createRecordResolver(spreadsheet, type);
-  //       let value = params[propName];
-  //       if (field.type instanceof GraphQLList) {
-  //         if (value instanceof Array) {
-  //           return assign(result, {
-  //             [propName]: value.map(item => {
-  //               return createRecord(
-  //                 record,
-  //                 {
-  //                   [singular(type.name)]: item
-  //                 },
-  //                 context
-  //               );
-  //             })
-  //           });
-  //         } else {
-  //           throw new Error(`${propName} must be an array to create ${type}`);
-  //         }
-  //       } else {
-  //         if (typeof value === "object") {
-  //           return assign(result, {
-  //             [propName]: createRecord(
-  //               record,
-  //               {
-  //                 [singular(type.name)]: value
-  //               },
-  //               context
-  //             )
-  //           });
-  //         } else {
-  //           throw new Error(`${propName} must be an object to create ${type}`);
-  //         }
-  //       }
-  //     } else {
-  //       return result;
-  //     }
-  //   }
-  // );
 }
 
 export function generateRelationshipFormula(
@@ -316,7 +212,7 @@ export function singleReferenceResolver(
 export function singularResolver(
   spreadsheet: Spreadsheet,
   name: string,
-  type: GraphQLObjectType
+  type: GraphQLNamedType
 ): (root, { id: string }, context) => Promise<Record> {
   return function findSpreadsheetRecord(root, { id }, context) {
     return spreadsheet.findRecord(name, id);
@@ -326,7 +222,7 @@ export function singularResolver(
 export function pluralResolver(
   spreadsheet: Spreadsheet,
   name: string,
-  type: GraphQLObjectType
+  type: GraphQLNamedType
 ): (root, args, context) => Promise<Record[]> {
   return function findAllSpreadsheetRecords(root, params, context) {
     return spreadsheet.findAll(name);

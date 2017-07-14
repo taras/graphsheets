@@ -204,10 +204,21 @@ export function isDefinedQuery(typeMap: TypeMap, name: string): boolean {
   return !!fields[name];
 }
 
+export function getType(typeMap: TypeMap, name: string): GraphQLNamedType {
+  return typeMap[name];
+}
+
 export function isDefinedMutation(typeMap: TypeMap, name: string): boolean {
+  return !!getMutation(typeMap, name);
+}
+
+export function getMutation(
+  typeMap: TypeMap,
+  name: string
+): GraphQLField<string, any> {
   let { Mutation } = typeMap;
   if (Mutation) {
     let fields = Mutation.getFields();
-    return !!fields[name];
+    return fields[name];
   }
 }
