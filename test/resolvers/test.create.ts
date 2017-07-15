@@ -16,11 +16,14 @@ describe("resolvers/create", () => {
       name: String
       products: [Product]
       father: Person
+      favourite: Product
     }
 
     type Product {
       id: ID!
       title: String
+      alternative: Product
+      owner: Person
     }
 
     type Query {
@@ -30,6 +33,7 @@ describe("resolvers/create", () => {
     input ProductInput {
       id: ID
       title: String
+      owner: PersonInput
     }
 
     input PersonInput {
@@ -37,6 +41,7 @@ describe("resolvers/create", () => {
       products: [ProductInput]
       name: String
       father: PersonInput
+      favourite: ProductInput
     }
 
     type Mutation {
@@ -152,7 +157,7 @@ describe("resolvers/create", () => {
       });
     });
   });
-  describe.only("extractRelationships", () => {
+  describe("extractRelationships", () => {
     it("extracts relationships for shallow single reference", () => {
       assert.deepEqual(
         extractRelationships(mutation, {
@@ -186,6 +191,54 @@ describe("resolvers/create", () => {
         [
           ["Person", "1", "products", "Product", "2"],
           ["Person", "1", "products", "Product", "3"]
+        ]
+      );
+    });
+    it("extracts relationships from deep single reference", () => {
+      assert.deepEqual(
+        extractRelationships(mutation, {
+          person: {
+            id: "1",
+            favourite: {
+              id: "2",
+              owner: {
+                id: "3"
+              }
+            }
+          }
+        }),
+        [
+          ["Person", "1", "favourite", "Product", "2"],
+          ["Product", "2", "owner", "Person", "3"]
+        ]
+      );
+    });
+    it("extracts realtionships from deep list references", () => {
+      assert.deepEqual(
+        extractRelationships(mutation, {
+          person: {
+            id: "1",
+            products: [
+              {
+                id: "2",
+                owner: {
+                  id: "3"
+                }
+              },
+              {
+                id: "4",
+                owner: {
+                  id: "5"
+                }
+              }
+            ]
+          }
+        }),
+        [
+          ["Person", "1", "products", "Product", "2"],
+          ["Product", "2", "owner", "Person", "3"],
+          ["Person", "1", "products", "Product", "4"],
+          ["Product", "4", "owner", "Person", "5"]
         ]
       );
     });

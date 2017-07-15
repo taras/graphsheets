@@ -40,37 +40,47 @@ export function extractRelationships(
       let root = get(argName, payload);
       let output = mutation.type as GraphQLObjectType;
 
-      return reduceType(
-        output,
-        (result, fieldName: string, type, { isList, isObject }) => {
-          if (isList && has(fieldName, root)) {
+      return [...result, ...typeTraverser(output, root)];
+    },
+    []
+  );
+}
+
+function typeTraverser(output: GraphQLObjectType, root) {
+  return reduceType(
+    output,
+    (
+      result,
+      fieldName: string,
+      type: GraphQLObjectType,
+      { isList, isObject }
+    ) => {
+      if (isList && has(fieldName, root)) {
+        return [
+          ...result,
+          ...get(fieldName, root).reduce((result, item) => {
             return [
               ...result,
-              ...get(fieldName, root).map(({ id }) => [
-                output.name,
-                root.id,
-                fieldName,
-                type.name,
-                id
-              ])
+              [output.name, root.id, fieldName, type.name, item.id],
+              ...typeTraverser(type, item)
             ];
-          }
-          if (isObject && has(fieldName, root)) {
-            return [
-              ...result,
-              [
-                output.name,
-                root.id,
-                fieldName,
-                type.name,
-                get(`${fieldName}.id`, root)
-              ]
-            ];
-          }
-          return result;
-        },
-        result
-      );
+          }, [])
+        ];
+      }
+      if (isObject && has(fieldName, root)) {
+        return [
+          ...result,
+          [
+            output.name,
+            root.id,
+            fieldName,
+            type.name,
+            get(`${fieldName}.id`, root)
+          ],
+          ...typeTraverser(type, get(fieldName, root))
+        ];
+      }
+      return result;
     },
     []
   );
