@@ -111,11 +111,41 @@ export type ObjectTypeInfo = {
   isObject: boolean;
 };
 
+export type ReduceTypeCallback = (
+  result: any,
+  fieldName: string,
+  type: GraphQLNamedType,
+  info: ObjectTypeInfo
+) => any;
+
+export function reduceType(
+  type: GraphQLObjectType,
+  callback: ReduceTypeCallback,
+  initial = {}
+) {
+  return reduceObject(
+    type.getFields(),
+    (result, fieldName: string, field: GraphQLField<string, any>) => {
+      return callback(
+        result,
+        fieldName,
+        getFieldType(field),
+        buildObjectTypeParams(field.type)
+      );
+    },
+    initial
+  );
+}
+
 export function buildObjectTypeParams(type): ObjectTypeInfo {
   return {
     ...buildCommonTypeParams(type),
     get isObject() {
-      return type instanceof GraphQLObjectType;
+      if (type instanceof GraphQLList || type instanceof GraphQLNonNull) {
+        return getNamedType(type) instanceof GraphQLObjectType;
+      } else {
+        return type instanceof GraphQLObjectType;
+      }
     }
   };
 }
@@ -141,7 +171,11 @@ export function buildCommonTypeParams(
 ) {
   return {
     get isScalar() {
-      return type instanceof GraphQLScalarType;
+      if (type instanceof GraphQLList || type instanceof GraphQLNonNull) {
+        return getNamedType(type) instanceof GraphQLScalarType;
+      } else {
+        return type instanceof GraphQLScalarType;
+      }
     },
     get isList() {
       return type instanceof GraphQLList;

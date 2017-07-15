@@ -1,12 +1,14 @@
 import Spreadsheet from "../models/spreadsheet";
+import { reduceObject } from "../utils/object-utils";
 import {
   reduceInputObjectType,
-  reduceMutationArguments
+  reduceMutationArguments,
+  reduceType
 } from "../utils/type-map-utils";
 import {
-  GraphQLObjectType,
   GraphQLField,
-  GraphQLInputObjectType
+  GraphQLInputObjectType,
+  GraphQLObjectType
 } from "graphql";
 import * as get from "lodash/fp/get";
 import * as set from "lodash/fp/set";
@@ -27,7 +29,52 @@ export default function createRecordResolver(
   };
 }
 
-export function extractRelationships(mutation, withIds) {}
+export function extractRelationships(
+  mutation: GraphQLField<string, any>,
+  payload: Payload
+) {
+  let { type } = mutation;
+  return reduceMutationArguments(
+    mutation,
+    (result, argName: string, argType: GraphQLInputObjectType, argInfo) => {
+      let root = get(argName, payload);
+      let output = mutation.type as GraphQLObjectType;
+
+      return reduceType(
+        output,
+        (result, fieldName: string, type, { isList, isObject }) => {
+          if (isList && has(fieldName, root)) {
+            return [
+              ...result,
+              ...get(fieldName, root).map(({ id }) => [
+                output.name,
+                root.id,
+                fieldName,
+                type.name,
+                id
+              ])
+            ];
+          }
+          if (isObject && has(fieldName, root)) {
+            return [
+              ...result,
+              [
+                output.name,
+                root.id,
+                fieldName,
+                type.name,
+                get(`${fieldName}.id`, root)
+              ]
+            ];
+          }
+          return result;
+        },
+        result
+      );
+    },
+    []
+  );
+}
 
 export function injectIds(mutation, payload, actions) {
   return reduceMutationArguments(

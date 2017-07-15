@@ -1,12 +1,15 @@
 import * as jest from "jest-mock";
 import * as assert from "power-assert";
 
-import createRecordResolver, { injectIds } from "../../lib/resolvers/create";
+import createRecordResolver, {
+  injectIds,
+  extractRelationships
+} from "../../lib/resolvers/create";
 import { buildSchemaFromTypeDefinitions } from "graphql-tools/dist";
 import { getType, getMutation } from "../../lib/utils/type-map-utils";
 import { GraphQLObjectType } from "graphql";
 
-describe.only("resolvers/create", () => {
+describe("resolvers/create", () => {
   let schema = buildSchemaFromTypeDefinitions(`
     type Person {
       id: ID!
@@ -147,6 +150,44 @@ describe.only("resolvers/create", () => {
           }
         );
       });
+    });
+  });
+  describe.only("extractRelationships", () => {
+    it("extracts relationships for shallow single reference", () => {
+      assert.deepEqual(
+        extractRelationships(mutation, {
+          person: {
+            id: "1",
+            father: { id: "2" }
+          }
+        }),
+        [["Person", "1", "father", "Person", "2"]]
+      );
+    });
+    it("extracts relationships for shallow list references", () => {
+      assert.deepEqual(
+        extractRelationships(mutation, {
+          person: {
+            id: "1",
+            products: [{ id: "2" }]
+          }
+        }),
+        [["Person", "1", "products", "Product", "2"]]
+      );
+    });
+    it("extracts relationshios from multiple items in a shllow list reference", () => {
+      assert.deepEqual(
+        extractRelationships(mutation, {
+          person: {
+            id: "1",
+            products: [{ id: "2" }, { id: "3" }]
+          }
+        }),
+        [
+          ["Person", "1", "products", "Product", "2"],
+          ["Person", "1", "products", "Product", "3"]
+        ]
+      );
     });
   });
 });

@@ -5,7 +5,9 @@ import {
   isDefinedMutation,
   getTypeMap,
   reduceMutationArguments,
-  reduceInputObjectType
+  reduceInputObjectType,
+  getType,
+  reduceType
 } from "../lib/utils/type-map-utils";
 import { buildSchemaFromTypeDefinitions } from "graphql-tools";
 import * as jest from "jest-mock";
@@ -19,7 +21,7 @@ import {
 
 const { keys } = Object;
 
-describe.only("utils/type-map-utils", () => {
+describe("utils/type-map-utils", () => {
   describe("isDefinedMutation", () => {
     let schema, typesMap;
     beforeEach(() => {
@@ -358,6 +360,111 @@ describe.only("utils/type-map-utils", () => {
       });
       it("returns last value", () => {
         assert.deepEqual(result, ["product", "products", "requiredProduct"]);
+      });
+    });
+  });
+
+  describe("reduceType", () => {
+    let schema = buildSchemaFromTypeDefinitions(`
+      type Person {
+        id: ID!
+        name: String
+        age: Int
+        father: Person
+        products: [Product]
+      }
+
+      type Product {
+        id: ID!
+        title: String
+      }
+
+      type Query {
+        person(id: String): Person
+      }
+    `);
+    let typeMap = schema.getTypeMap();
+    let Person = getType(typeMap, "Person") as GraphQLObjectType;
+    let callback, result;
+    beforeEach(() => {
+      callback = jest.fn((result, key, { name }) => {
+        return {
+          ...result,
+          [key]: name
+        };
+      });
+      result = reduceType(Person, callback);
+    });
+    it("invokes callback 5 times", () => {
+      assert.equal(callback.mock.calls.length, 5);
+    });
+    it("expected arguments for ID field", () => {
+      assert.deepEqual(callback.mock.calls[0][0], {});
+      assert.equal(callback.mock.calls[0][1], "id");
+      assert.equal(callback.mock.calls[0][2].name, "ID");
+      assert.deepEqual(callback.mock.calls[0][3], {
+        isScalar: true,
+        isList: false,
+        isNonNull: true,
+        isObject: false
+      });
+    });
+    it("expected arguments for String field", () => {
+      assert.deepEqual(callback.mock.calls[1][0], {
+        id: "ID"
+      });
+      assert.equal(callback.mock.calls[1][1], "name");
+      assert.equal(callback.mock.calls[1][2].name, "String");
+      assert.deepEqual(callback.mock.calls[1][3], {
+        isScalar: true,
+        isList: false,
+        isNonNull: false,
+        isObject: false
+      });
+    });
+    it("expected arguments for Int", () => {
+      assert.deepEqual(callback.mock.calls[2][0], {
+        id: "ID",
+        name: "String"
+      });
+      assert.equal(callback.mock.calls[2][1], "age");
+      assert.equal(callback.mock.calls[2][2].name, "Int");
+      assert.deepEqual(callback.mock.calls[2][3], {
+        isScalar: true,
+        isList: false,
+        isNonNull: false,
+        isObject: false
+      });
+    });
+    it("expected arguments for single reference", () => {
+      assert.deepEqual(callback.mock.calls[3][0], {
+        id: "ID",
+        name: "String",
+        age: "Int"
+      });
+      assert.equal(callback.mock.calls[3][1], "father");
+      assert.equal(callback.mock.calls[3][2].name, "Person");
+      assert.deepEqual(callback.mock.calls[3][3], {
+        isScalar: false,
+        isList: false,
+        isNonNull: false,
+        isObject: true
+      });
+    });
+    it("expected arguments for list reference", () => {
+      assert.deepEqual(callback.mock.calls[4][0], {
+        id: "ID",
+        name: "String",
+        age: "Int",
+        father: "Person"
+      });
+      assert.equal(callback.mock.calls[4][1], "products");
+      assert.equal(callback.mock.calls[4][2].name, "Product");
+      assert.deepEqual(callback.mock.calls[4][3], {
+        isScalar: false,
+        isList: true,
+        isNonNull: false,
+        isObject: true
       });
     });
   });
