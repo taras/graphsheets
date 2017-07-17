@@ -3,7 +3,8 @@ import * as assert from "power-assert";
 
 import createRecordResolver, {
   injectIds,
-  extractRelationships
+  extractRelationships,
+  replaceFormulasAndFlatten
 } from "../../lib/resolvers/create";
 import { buildSchemaFromTypeDefinitions } from "graphql-tools/dist";
 import { getType, getMutation } from "../../lib/utils/type-map-utils";
@@ -241,6 +242,48 @@ describe("resolvers/create", () => {
           ["Product", "4", "owner", "Person", "5"]
         ]
       );
+    });
+  });
+  describe.only("replaceFormulasAndFlatten", () => {
+    let result;
+    beforeEach(() => {
+      result = replaceFormulasAndFlatten(mutation, {
+        person: {
+          id: "1",
+          favourite: {
+            id: "2"
+          },
+          products: [
+            {
+              id: "3",
+              owner: {
+                id: "5"
+              }
+            }
+          ]
+        }
+      });
+    });
+    it("adds relationship formulas for root item", () => {
+      assert.deepEqual(result[0], [
+        "Person",
+        {
+          id: "1",
+          products: `=JOIN(",", QUERY(RELATIONSHIPS!A:F, "SELECT F WHERE B='Person' AND C='1' AND D='products' and E='Product'"))`,
+          favourite: `=JOIN(",", QUERY(RELATIONSHIPS!A:F, "SELECT F WHERE B='Person' AND C='1' AND D='favourite' and E='Product'"))`,
+          father: `=JOIN(",", QUERY(RELATIONSHIPS!A:F, "SELECT F WHERE B='Person' AND C='1' AND D='father' and E='Person'"))`
+        }
+      ]);
+    });
+    it("add relationship formulas for single reference", () => {
+      assert.deepEqual(result[1], [
+        "Product",
+        {
+          id: "2",
+          alternative: `=JOIN(",", QUERY(RELATIONSHIPS!A:F, "SELECT F WHERE B='Product' AND C='2' AND D='alternative' and E='Product'"))`,
+          owner: `=JOIN(",", QUERY(RELATIONSHIPS!A:F, "SELECT F WHERE B='Product' AND C='2' AND D='owner' and E='Person'"))`
+        }
+      ]);
     });
   });
 });

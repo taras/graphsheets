@@ -3,30 +3,118 @@ import { reduceObject } from "../utils/object-utils";
 import {
   reduceInputObjectType,
   reduceMutationArguments,
-  reduceType
+  reduceType,
+  buildObjectTypeParams
 } from "../utils/type-map-utils";
 import {
   GraphQLField,
   GraphQLInputObjectType,
-  GraphQLObjectType
+  GraphQLObjectType,
+  GraphQLNamedType
 } from "graphql";
 import * as get from "lodash/fp/get";
-import * as set from "lodash/fp/set";
 import * as has from "lodash/fp/has";
 
 export default function createRecordResolver(
   spreadsheet: Spreadsheet,
-  type: GraphQLObjectType,
   mutation: GraphQLField<string, any>
 ) {
-  let { name } = type;
   return async function createRecord(_, payload: Payload, context) {
     let withIds = injectIds(mutation, payload, {
       generateId: () => spreadsheet.newId()
     });
 
+    let relationships = extractRelationships(mutation, withIds);
+
+    let withRelationshipFormulas = replaceFormulasAndFlatten(mutation, withIds);
+
     return withIds;
   };
+}
+
+type FlatPayload = [string, { [key: string]: any }];
+
+export function replaceFormulasAndFlatten(
+  mutation: GraphQLField<string, any>,
+  payload: Payload
+) {
+  return reduceMutationArguments(
+    mutation,
+    (result: Array<FlatPayload>, argName: string) => {
+      let root = payload[argName];
+      let output = mutation.type as GraphQLObjectType;
+      let { isList, isObject } = buildObjectTypeParams(output);
+
+      if (isObject) {
+        let flat = flattenReference(output, root);
+
+        return reduceType(
+          output,
+          (
+            result,
+            fieldName: string,
+            type: GraphQLNamedType,
+            { isScalar, isList, isObject }
+          ) => {
+            if (isObject && has(fieldName, root)) {
+              if (isList) {
+                return result;
+              } else {
+                return [...result, flattenReference(type, root[fieldName])];
+              }
+            }
+            return result;
+          },
+          [flat]
+        );
+      }
+    },
+    []
+  );
+}
+
+export function flattenReference(output, root) {
+  return [
+    output.name,
+    reduceType(
+      output,
+      (
+        result,
+        fieldName: string,
+        type: GraphQLNamedType,
+        { isList, isObject }
+      ) => {
+        if (isObject) {
+          return {
+            ...result,
+            [fieldName]: relationshipFormula(
+              output.name,
+              root.id,
+              fieldName,
+              type.name
+            )
+          };
+        }
+        if (has(fieldName, root)) {
+          return {
+            ...result,
+            [fieldName]: get(fieldName, root)
+          };
+        } else {
+          return result;
+        }
+      }
+    )
+  ];
+}
+
+export function relationshipFormula(
+  from: string,
+  id: string,
+  on: string,
+  to: string
+) {
+  return `=JOIN(",", QUERY(RELATIONSHIPS!A:F, "SELECT F WHERE B='${from}' AND C='${id}' AND D='${on}' and E='${to}'"))`;
 }
 
 export function extractRelationships(

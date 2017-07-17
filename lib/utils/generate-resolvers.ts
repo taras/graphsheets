@@ -10,7 +10,9 @@ import {
   reduceInputObjectTypeCallback,
   reduceMutationArguments,
   TypeMap,
-  getMutation
+  getMutation,
+  reduceType,
+  getType
 } from "./type-map-utils";
 import allProperties from "./wait-for-all-properties";
 import {
@@ -42,48 +44,34 @@ export default function generateResolvers(schema: GraphQLSchema, spreadsheet) {
   let typeMap = schema.getTypeMap();
 
   let queries = generateQueryResolvers(typeMap, spreadsheet);
-  let mutations = generateMutationResolvers(typeMap, spreadsheet);
+  let Mutation = generateMutationResolvers(typeMap, spreadsheet);
 
-  return assign({}, queries, mutations);
+  return {
+    ...queries,
+    ...Mutation ? { Mutation } : {}
+  };
 }
 
 export function generateMutationResolvers(
   typeMap: TypeMap,
   spreadsheet: Spreadsheet
 ): { Mutation?: { [name: string]: (root, args, context) => any } } {
-  let objectTypes = onlyObjectTypes(typeMap);
+  let Mutation = getType(typeMap, "Mutation") as GraphQLObjectType;
 
-  let Mutation = reduceObject(
-    objectTypes,
-    (
-      result: { [name: string]: (root, args, context) => any },
-      name: string,
-      type: GraphQLObjectType
-    ) => {
-      return assign(
-        result,
-        isDefinedMutation(typeMap, `create${name}`) && {
-          [`create${name}`]: createRecordResolver(
-            spreadsheet,
-            type,
-            getMutation(typeMap, `create${name}`)
-          )
-        },
-        isDefinedMutation(typeMap, `update${name}`) && {
-          [`update${name}`]: updateRecordResolver(spreadsheet, name)
-        },
-        isDefinedMutation(typeMap, `delete${name}`) && {
-          [`delete${name}`]: deleteRecordResolver(spreadsheet, name)
-        }
-      );
+  return reduceObject(
+    Mutation.getFields(),
+    (result, mutationName: string, mutation: GraphQLField<string, any>) => {
+      let type = getFieldType(mutation);
+      return {
+        ...result,
+        .../^create(.*)$/.test(mutationName)
+          ? {
+              [mutationName]: createRecordResolver(spreadsheet, mutation)
+            }
+          : {}
+      };
     }
   );
-
-  if (keys(Mutation).length > 0) {
-    return { Mutation };
-  } else {
-    return {};
-  }
 }
 
 export function generateQueryResolvers(
@@ -155,15 +143,6 @@ export function singular(name: string) {
 export function plural(name) {
   // TODO: replace this with the inflector
   return `${name.toLowerCase()}s`;
-}
-
-export function generateRelationshipFormula(
-  from: string,
-  id: string,
-  on: string,
-  to: string
-) {
-  return `=JOIN(",", QUERY(RELATIONSHIPS!A:F, "SELECT F WHERE B='${from}' AND C='${id}' AND D='${on}' and E='${to}'"))`;
 }
 
 export function updateRecordResolver(spreadsheet: Spreadsheet, type: string) {
