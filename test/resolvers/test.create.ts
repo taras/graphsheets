@@ -257,7 +257,7 @@ describe("resolvers/create", () => {
             {
               id: "3",
               owner: {
-                id: "5"
+                id: "4"
               }
             }
           ]
@@ -275,8 +275,29 @@ describe("resolvers/create", () => {
         }
       ]);
     });
-    it("add relationship formulas for single reference", () => {
+    it("adds relationship formulas for list reference", () => {
       assert.deepEqual(result[1], [
+        "Product",
+        {
+          id: "3",
+          alternative: `=JOIN(",", QUERY(RELATIONSHIPS!A:F, "SELECT F WHERE B='Product' AND C='3' AND D='alternative' and E='Product'"))`,
+          owner: `=JOIN(",", QUERY(RELATIONSHIPS!A:F, "SELECT F WHERE B='Product' AND C='3' AND D='owner' and E='Person'"))`
+        }
+      ]);
+    });
+    it("adds relationship formulas for recursive single reference", () => {
+      assert.deepEqual(result[2], [
+        "Person",
+        {
+          id: "4",
+          products: `=JOIN(",", QUERY(RELATIONSHIPS!A:F, "SELECT F WHERE B='Person' AND C='4' AND D='products' and E='Product'"))`,
+          favourite: `=JOIN(",", QUERY(RELATIONSHIPS!A:F, "SELECT F WHERE B='Person' AND C='4' AND D='favourite' and E='Product'"))`,
+          father: `=JOIN(",", QUERY(RELATIONSHIPS!A:F, "SELECT F WHERE B='Person' AND C='4' AND D='father' and E='Person'"))`
+        }
+      ]);
+    });
+    it("adds relationship formulas for single reference", () => {
+      assert.deepEqual(result[3], [
         "Product",
         {
           id: "2",

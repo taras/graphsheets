@@ -15,6 +15,8 @@ import {
 import * as get from "lodash/fp/get";
 import * as has from "lodash/fp/has";
 
+const { isArray } = Array;
+
 export default function createRecordResolver(
   spreadsheet: Spreadsheet,
   mutation: GraphQLField<string, any>
@@ -46,27 +48,7 @@ export function replaceFormulasAndFlatten(
       let { isList, isObject } = buildObjectTypeParams(output);
 
       if (isObject) {
-        let flat = flattenReference(output, root);
-
-        return reduceType(
-          output,
-          (
-            result,
-            fieldName: string,
-            type: GraphQLNamedType,
-            { isScalar, isList, isObject }
-          ) => {
-            if (isObject && has(fieldName, root)) {
-              if (isList) {
-                return result;
-              } else {
-                return [...result, flattenReference(type, root[fieldName])];
-              }
-            }
-            return result;
-          },
-          [flat]
-        );
+        return [...result, ...flattenReference(output, root)];
       }
     },
     []
@@ -74,38 +56,69 @@ export function replaceFormulasAndFlatten(
 }
 
 export function flattenReference(output, root) {
-  return [
-    output.name,
-    reduceType(
-      output,
-      (
-        result,
-        fieldName: string,
-        type: GraphQLNamedType,
-        { isList, isObject }
-      ) => {
-        if (isObject) {
-          return {
-            ...result,
-            [fieldName]: relationshipFormula(
-              output.name,
-              root.id,
-              fieldName,
-              type.name
-            )
-          };
-        }
-        if (has(fieldName, root)) {
-          return {
-            ...result,
-            [fieldName]: get(fieldName, root)
-          };
+  return reduceType(
+    output,
+    (
+      result,
+      fieldName: string,
+      type: GraphQLNamedType,
+      { isScalar, isList, isObject }
+    ) => {
+      let value = root[fieldName];
+      if (isObject && has(fieldName, root)) {
+        if (isList) {
+          if (isArray(value)) {
+            return [
+              ...result,
+              ...value.reduce(
+                (result, item) => [...result, ...flattenReference(type, item)],
+                []
+              )
+            ];
+          } else {
+            return result;
+          }
         } else {
-          return result;
+          return [...result, ...flattenReference(type, value)];
         }
       }
-    )
-  ];
+      return result;
+    },
+    [
+      [
+        output.name,
+        reduceType(
+          output,
+          (
+            result,
+            fieldName: string,
+            type: GraphQLNamedType,
+            { isList, isObject }
+          ) => {
+            if (isObject) {
+              return {
+                ...result,
+                [fieldName]: relationshipFormula(
+                  output.name,
+                  root.id,
+                  fieldName,
+                  type.name
+                )
+              };
+            }
+            if (has(fieldName, root)) {
+              return {
+                ...result,
+                [fieldName]: get(fieldName, root)
+              };
+            } else {
+              return result;
+            }
+          }
+        )
+      ]
+    ]
+  );
 }
 
 export function relationshipFormula(
