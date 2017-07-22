@@ -1,20 +1,21 @@
-import spreadsheet from "../../test/fixtures/spreadsheet";
+///<reference path="../../node_modules/dataloader/index.d.ts"/>
 import {
   default as GoogleSheetsAdapter,
   GoogleSheets,
   TableQuery
 } from "../adapters/google-sheets";
-import { ISheetHeader } from "../Interfaces";
-import Record from "../models/record";
 import Sheet from "../models/sheet";
 import Spreadsheet from "../models/spreadsheet";
 import * as DataLoader from "dataloader";
 import * as zipObject from "lodash.zipobject";
 
 const { assign } = Object;
+
+const RELATIONSHIP_SHEET = "RELATIONSHIPS";
+const relationshipFields = ["A", "B", "C", "D", "E", "F"];
 export default class GoogleSheetsConnector {
   private api: GoogleSheetsAdapter;
-  private loaders: { [range: string]: DataLoader<string, {}> };
+  private loaders: { [range: string]: DataLoader<any, {}> };
 
   constructor(adapter: GoogleSheetsAdapter) {
     this.api = adapter;
@@ -59,18 +60,17 @@ export default class GoogleSheetsConnector {
 
   async loadAll(spreadsheetId: string, sheet: string): Promise<{}[]> {
     let recordLoader = this.getRecordLoader(spreadsheetId, sheet);
-    return this.api
-      .query({
-        spreadsheetId,
-        sheet
-      })
-      .then((response: TableQuery.Response) => {
-        let records = deserializeTableQueryResponse(response);
-        records.forEach(record => {
-          recordLoader.prime(record.id, record);
-        });
-        return records;
-      });
+    let response: TableQuery.Response = await this.api.query({
+      spreadsheetId,
+      sheet
+    });
+
+    let records = deserializeTableQueryResponse(response);
+    records.forEach(record => {
+      recordLoader.prime(record.id, record);
+    });
+
+    return records;
   }
 
   async createRecord(
@@ -87,6 +87,7 @@ export default class GoogleSheetsConnector {
         return null;
       }
     });
+
     let response = await this.api.append({
       spreadsheetId,
       range: sheet.title,
@@ -106,6 +107,33 @@ export default class GoogleSheetsConnector {
     let [writtenValues] = responseValues;
 
     return zipObject(fieldNames, writtenValues);
+  }
+
+  createRelationship(spreadsheetId: string, relationship: Relationship) {
+    let loader = this.ensureLoader(
+      "RELATIONSHIPS::write",
+      async (records: Array<Relationship>) => {
+        let response = await this.api.append({
+          spreadsheetId,
+          range: RELATIONSHIP_SHEET,
+          includeValuesInResponse: true,
+          valueInputOption: "USER_ENTERED",
+          insertDataOption: "INSERT_ROWS",
+          responseValueRenderOption: "FORMATTED_VALUE",
+          resource: {
+            majorDimension: GoogleSheets.Dimension.ROWS,
+            values: records,
+            range: RELATIONSHIP_SHEET
+          }
+        });
+        let { updates: { updatedData: { values: responseValues } } } = response;
+
+        return responseValues.map(writtenValues =>
+          zipObject(relationshipFields, writtenValues)
+        );
+      }
+    );
+    return loader.load(["=row()", ...relationship]);
   }
 
   async updateRecord(
@@ -144,7 +172,7 @@ export default class GoogleSheetsConnector {
     return loader.loadMany(ids);
   }
 
-  getRecordLoader(url, type): DataLoader<string, {}> {
+  getRecordLoader(url, type): DataLoader<any, {}> {
     return this.ensureLoader(type, this.makeRecordLoaderBatchFn(url, type));
   }
 
@@ -156,17 +184,16 @@ export default class GoogleSheetsConnector {
           sheet: type,
           ids
         })
-        .then((response: TableQuery.Response) => {
-          console.log(response);
-          return deserializeTableQueryResponse(response);
-        });
+        .then((response: TableQuery.Response) =>
+          deserializeTableQueryResponse(response)
+        );
     };
   }
 
   ensureLoader(
     type: string,
-    batchFn: (ids: string[]) => any
-  ): DataLoader<string, {}> {
+    batchFn: (ids: any[]) => any
+  ): DataLoader<any, {}> {
     let loader = this.loaders[type];
     if (loader) {
       return loader;
@@ -178,14 +205,29 @@ export default class GoogleSheetsConnector {
   }
 }
 
+type Relationship = [string, string, string, string];
+
 export function deserializeTableQueryResponse(payload: TableQuery.Response) {
   let { table: { cols, rows } } = payload;
 
   let headers = cols.map(({ label }) => label);
   return rows.map(({ c }) => {
-    let values = c.map(({ v }) => v);
+    let values = c.map(parseValue);
     return zipObject(headers, values);
   });
+}
+
+export function parseValue(value) {
+  if (value === null) {
+    return value;
+  } else {
+    let { v } = value;
+    if (v === "#N/A") {
+      return null;
+    } else {
+      return v;
+    }
+  }
 }
 
 export function deserializeSpreadsheet(payload: GoogleSheets.Spreadsheet) {
@@ -193,8 +235,7 @@ export function deserializeSpreadsheet(payload: GoogleSheets.Spreadsheet) {
     spreadsheetId: id,
     spreadsheetUrl: url,
     sheets,
-    properties: { title },
-    namedRanges
+    properties: { title }
   } = payload;
 
   return {
@@ -211,7 +252,6 @@ export function deserializeSheet(sheet: GoogleSheets.Sheet) {
       sheetId: id,
       title,
       index,
-      hidden,
       gridProperties: { columnCount, rowCount }
     },
     data
@@ -255,5 +295,5 @@ export function deserializeNamedRange(data: GoogleSheets.NamedRange) {
 }
 
 export function onlyModels({ title }) {
-  return !["WELCOME", "RELATIONSHIPS"].includes(title);
+  return !["WELCOME", RELATIONSHIP_SHEET].includes(title);
 }

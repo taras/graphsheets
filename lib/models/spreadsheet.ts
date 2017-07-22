@@ -73,6 +73,22 @@ export default class Spreadsheet {
     );
   }
 
+  async createRelationship(
+    from: string,
+    id: string,
+    on: string,
+    to: string,
+    target: string
+  ) {
+    return this.connector.createRelationship(this.id, [
+      from,
+      id,
+      on,
+      to,
+      target
+    ]);
+  }
+
   async createRecord(
     type: string,
     props: { [name: string]: any }

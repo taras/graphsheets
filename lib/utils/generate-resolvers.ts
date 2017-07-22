@@ -12,7 +12,7 @@ import {
   TypeMap,
   getMutation,
   reduceType,
-  getType
+  getType,
 } from "./type-map-utils";
 import allProperties from "./wait-for-all-properties";
 import {
@@ -20,7 +20,7 @@ import {
   GraphQLList,
   GraphQLField,
   GraphQLSchema,
-  GraphQLObjectType
+  GraphQLObjectType,
 } from "graphql";
 import createRecordResolver from "../resolvers/create";
 
@@ -48,35 +48,36 @@ export default function generateResolvers(schema: GraphQLSchema, spreadsheet) {
 
   return {
     ...queries,
-    ...Mutation ? { Mutation } : {}
+    ...Mutation ? { Mutation } : {},
   };
 }
 
 export function generateMutationResolvers(
   typeMap: TypeMap,
-  spreadsheet: Spreadsheet
+  spreadsheet: Spreadsheet,
 ): { Mutation?: { [name: string]: (root, args, context) => any } } {
   let Mutation = getType(typeMap, "Mutation") as GraphQLObjectType;
 
-  return reduceObject(
-    Mutation.getFields(),
-    (result, mutationName: string, mutation: GraphQLField<string, any>) => {
-      let type = getFieldType(mutation);
-      return {
-        ...result,
-        .../^create(.*)$/.test(mutationName)
-          ? {
-              [mutationName]: createRecordResolver(spreadsheet, mutation)
-            }
-          : {}
-      };
-    }
-  );
+  if (Mutation) {
+    return reduceObject(
+      Mutation.getFields(),
+      (result, mutationName: string, mutation: GraphQLField<string, any>) => {
+        return {
+          ...result,
+          .../^create(.*)$/.test(mutationName)
+            ? {
+                [mutationName]: createRecordResolver(spreadsheet, mutation),
+              }
+            : {},
+        };
+      },
+    );
+  }
 }
 
 export function generateQueryResolvers(
   typeMap: TypeMap,
-  spreadsheet: Spreadsheet
+  spreadsheet: Spreadsheet,
 ) {
   let objectTypes = onlyObjectTypes(typeMap);
 
@@ -85,7 +86,7 @@ export function generateQueryResolvers(
     (
       result: { [name: string]: GraphQLNamedType },
       name: string,
-      type: GraphQLNamedType
+      type: GraphQLNamedType,
     ) => {
       let singularName = singular(name);
       let pluralName = plural(name);
@@ -93,13 +94,13 @@ export function generateQueryResolvers(
       return assign(
         result,
         isDefinedQuery(typeMap, singularName) && {
-          [singularName]: singularResolver(spreadsheet, name, type)
+          [singularName]: singularResolver(spreadsheet, name, type),
         },
         isDefinedQuery(typeMap, pluralName) && {
-          [pluralName]: pluralResolver(spreadsheet, name, type)
-        }
+          [pluralName]: pluralResolver(spreadsheet, name, type),
+        },
       );
-    }
+    },
   );
 
   let rootTypes = reduceObject(
@@ -107,7 +108,7 @@ export function generateQueryResolvers(
     (
       result: { [name: string]: GraphQLNamedType },
       name: string,
-      type: GraphQLObjectType
+      type: GraphQLObjectType,
     ) => {
       let fields = onlyComposite(type.getFields());
 
@@ -120,19 +121,19 @@ export function generateQueryResolvers(
             } else {
               return singleReferenceResolver(spreadsheet, propName, type.name);
             }
-          })
+          }),
         });
       } else {
         return result;
       }
-    }
+    },
   );
 
   return assign(
     {
-      Query
+      Query,
     },
-    rootTypes
+    rootTypes,
   );
 }
 
@@ -162,7 +163,7 @@ export function deleteRecordResolver(spreadsheet: Spreadsheet, type: string) {
 export function listReferenceResolver(
   spreadsheet: Spreadsheet,
   propName: string,
-  type: string
+  type: string,
 ) {
   return function findListReference(root, params, context) {
     let value = root[propName];
@@ -178,7 +179,7 @@ export function listReferenceResolver(
 export function singleReferenceResolver(
   spreadsheet,
   propName: string,
-  type: string
+  type: string,
 ) {
   return function findSingleReference(root, params, context) {
     let value = root[propName];
@@ -191,7 +192,7 @@ export function singleReferenceResolver(
 export function singularResolver(
   spreadsheet: Spreadsheet,
   name: string,
-  type: GraphQLNamedType
+  type: GraphQLNamedType,
 ): (root, { id: string }, context) => Promise<Record> {
   return function findSpreadsheetRecord(root, { id }, context) {
     return spreadsheet.findRecord(name, id);
@@ -201,7 +202,7 @@ export function singularResolver(
 export function pluralResolver(
   spreadsheet: Spreadsheet,
   name: string,
-  type: GraphQLNamedType
+  type: GraphQLNamedType,
 ): (root, args, context) => Promise<Record[]> {
   return function findAllSpreadsheetRecords(root, params, context) {
     return spreadsheet.findAll(name);

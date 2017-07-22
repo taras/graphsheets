@@ -1,14 +1,16 @@
+import { createReadStream } from "fs";
 import * as jest from "jest-mock";
 import * as assert from "power-assert";
 
-import createRecordResolver, {
+import {
   injectIds,
   extractRelationships,
-  replaceFormulasAndFlatten
+  replaceFormulasAndFlatten,
+  default as createRecordResolver
 } from "../../lib/resolvers/create";
+
 import { buildSchemaFromTypeDefinitions } from "graphql-tools/dist";
-import { getType, getMutation } from "../../lib/utils/type-map-utils";
-import { GraphQLObjectType } from "graphql";
+import { getMutation } from "../../lib/utils/type-map-utils";
 
 describe("resolvers/create", () => {
   let schema = buildSchemaFromTypeDefinitions(`
@@ -51,8 +53,66 @@ describe("resolvers/create", () => {
   `);
   let typeMap = schema.getTypeMap();
   let mutation = getMutation(typeMap, "createPerson");
+  describe("resolver", () => {
+    let spreadsheet, resolver;
+    beforeEach(() => {
+      spreadsheet = {
+        newId: jest.fn(),
+        createRecord: jest.fn(),
+        createRelationship: jest.fn()
+      };
+      resolver = createRecordResolver(spreadsheet, mutation);
+    });
+    it("creates a single object", async () => {
+      spreadsheet.newId.mockReturnValue("a");
+      spreadsheet.createRecord.mockReturnValue({ id: "a" });
+      let result = await resolver({}, { person: {} });
+
+      assert.equal(spreadsheet.newId.mock.calls.length, 1);
+      assert.equal(spreadsheet.createRecord.mock.calls.length, 1);
+      assert.deepEqual(spreadsheet.createRecord.mock.calls[0], [
+        "Person",
+        {
+          id: "a",
+          father:
+            "=JOIN(\",\", QUERY(RELATIONSHIPS!A:F, \"SELECT F WHERE B='Person' AND C='a' AND D='father' and E='Person'\"))",
+          favourite:
+            "=JOIN(\",\", QUERY(RELATIONSHIPS!A:F, \"SELECT F WHERE B='Person' AND C='a' AND D='favourite' and E='Product'\"))",
+          products:
+            "=JOIN(\",\", QUERY(RELATIONSHIPS!A:F, \"SELECT F WHERE B='Person' AND C='a' AND D='products' and E='Product'\"))"
+        }
+      ]);
+      assert.deepEqual(result, {
+        id: "a"
+      });
+    });
+    it("creates a single object with object references", async () => {
+      spreadsheet.newId.mockReturnValueOnce("a").mockReturnValueOnce("b");
+      spreadsheet.createRecord
+        .mockReturnValueOnce({ id: "a" })
+        .mockReturnValueOnce({ id: "b" });
+      let result = await resolver(
+        {},
+        {
+          person: {
+            father: {}
+          }
+        }
+      );
+      assert.equal(spreadsheet.newId.mock.calls.length, 2);
+      assert.equal(spreadsheet.createRecord.mock.calls.length, 2);
+      assert.equal(spreadsheet.createRelationship.mock.calls.length, 1);
+      assert.deepEqual(spreadsheet.createRelationship.mock.calls[0], [
+        "Person",
+        "a",
+        "father",
+        "Person",
+        "b"
+      ]);
+    });
+  });
   describe("injectId", () => {
-    let resolver, spreadsheet, actions;
+    let actions;
     beforeEach(() => {
       let id = 1;
       actions = {
@@ -74,7 +134,7 @@ describe("resolvers/create", () => {
         }
       );
     });
-    it("adds ids to single ferences", async () => {
+    it("adds ids to single references", async () => {
       assert.deepEqual(
         injectIds(
           mutation,
@@ -244,7 +304,7 @@ describe("resolvers/create", () => {
       );
     });
   });
-  describe.only("replaceFormulasAndFlatten", () => {
+  describe("replaceFormulasAndFlatten", () => {
     let result;
     beforeEach(() => {
       result = replaceFormulasAndFlatten(mutation, {

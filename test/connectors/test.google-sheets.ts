@@ -1,17 +1,18 @@
 import * as assert from "power-assert";
 import * as jest from "jest-mock";
 
-import GoogleSheetsAdapter from "../lib/adapters/google-sheets";
+import GoogleSheetsAdapter from "../../lib/adapters/google-sheets";
 import {
   default as GoogleSheetsConnector,
+  deserializeTableQueryResponse,
   extractHeaders,
-  deserializeTableQueryResponse
-} from "../lib/connectors/google-sheets";
-import { IAuthorizer } from "../lib/Interfaces";
-import Sheet from "../lib/models/sheet";
-import Spreadsheet from "../lib/models/spreadsheet";
-import spreadsheetFixture from "./fixtures/spreadsheet";
-import tableQueryFixture from "./fixtures/table-query";
+  parseValue
+} from "../../lib/connectors/google-sheets";
+import { IAuthorizer } from "../../lib/Interfaces";
+import Sheet from "../../lib/models/sheet";
+import Spreadsheet from "../../lib/models/spreadsheet";
+import spreadsheetFixture from "./../fixtures/spreadsheet";
+import tableQueryFixture from "./../fixtures/table-query";
 
 describe("connectors/google-sheets", () => {
   describe("load", () => {
@@ -49,46 +50,6 @@ describe("connectors/google-sheets", () => {
         ss.url,
         "https://docs.google.com/spreadsheets/d/1kjeHcZKwW5aWc9MPbyBiy3ByVgHdkDi-H3ihuBKmEPQ/edit"
       );
-
-      // assert.ok(ss.sheets[0] instanceof Sheet);
-      // assert.equal(ss.sheets[0].title, "Person");
-      // assert.deepEqual(ss.sheets[0].headers, [
-      //   {
-      //     title: "id",
-      //     note: undefined
-      //   },
-      //   {
-      //     title: "firstName",
-      //     note: undefined
-      //   },
-      //   {
-      //     title: "lastName",
-      //     note: undefined
-      //   },
-      //   {
-      //     title: "products",
-      //     note: undefined
-      //   },
-      //   {
-      //     title: "fullName",
-      //     note: undefined
-      //   },
-      //   {
-      //     title: "productsCount",
-      //     note: undefined
-      //   }
-      // ]);
-      // assert.ok(ss.sheets[1] instanceof Sheet);
-
-      // assert.deepEqual(this.adapter.get.mock.calls, [
-      //   [
-      //     {
-      //       includeGridData: true,
-      //       ranges: "Product!A1:ZZ1,Person!A1:ZZ1",
-      //       spreadsheetId: "1kjeHcZKwW5aWc9MPbyBiy3ByVgHdkDi-H3ihuBKmEPQ"
-      //     }
-      //   ]
-      // ]);
     });
   });
 
@@ -125,12 +86,13 @@ describe("connectors/google-sheets", () => {
   });
 
   describe("deserializeTableQueryResponse", () => {
+    let result;
     beforeEach(() => {
-      this.result = deserializeTableQueryResponse(tableQueryFixture);
+      result = deserializeTableQueryResponse(tableQueryFixture);
     });
 
     it("produces an array of object", () => {
-      assert.deepEqual(this.result, [
+      assert.deepEqual(result, [
         {
           id: 1,
           firstName: "Taras",
@@ -148,6 +110,19 @@ describe("connectors/google-sheets", () => {
           productsCount: 2
         }
       ]);
+    });
+  });
+
+  describe("parseValue", () => {
+    it("returns null when receives null", () => {
+      assert.equal(parseValue(null), null);
+    });
+    it("returns value when value is wrapped in object", () => {
+      assert.equal(parseValue({ v: "hello" }), "hello");
+      assert.equal(parseValue({ v: null }), null);
+    });
+    it("results null when value is #N/A", () => {
+      assert.equal(parseValue({ v: "#N/A" }), null);
     });
   });
 });
