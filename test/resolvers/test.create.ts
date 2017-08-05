@@ -4,54 +4,16 @@ import * as assert from "power-assert";
 
 import {
   injectIds,
-  extractRelationships,
   replaceFormulasAndFlatten,
   default as createRecordResolver
 } from "../../lib/resolvers/create";
 
 import { buildSchemaFromTypeDefinitions } from "graphql-tools/dist";
 import { getMutation } from "../../lib/utils/type-map-utils";
+import getTypeMapFromSchemaFile from "../helpers/get-type-map";
 
 describe("resolvers/create", () => {
-  let schema = buildSchemaFromTypeDefinitions(`
-    type Person {
-      id: ID!
-      name: String
-      products: [Product]
-      father: Person
-      favourite: Product
-    }
-
-    type Product {
-      id: ID!
-      title: String
-      alternative: Product
-      owner: Person
-    }
-
-    type Query {
-      persons: [Person]
-    }
-
-    input ProductInput {
-      id: ID
-      title: String
-      owner: PersonInput
-    }
-
-    input PersonInput {
-      id: ID
-      products: [ProductInput]
-      name: String
-      father: PersonInput
-      favourite: ProductInput
-    }
-
-    type Mutation {
-      createPerson(person: PersonInput): Person
-    }
-  `);
-  let typeMap = schema.getTypeMap();
+  let typeMap = getTypeMapFromSchemaFile("default");
   let mutation = getMutation(typeMap, "createPerson");
   describe("resolver", () => {
     let spreadsheet, resolver;
@@ -216,92 +178,6 @@ describe("resolvers/create", () => {
           }
         );
       });
-    });
-  });
-  describe("extractRelationships", () => {
-    it("extracts relationships for shallow single reference", () => {
-      assert.deepEqual(
-        extractRelationships(mutation, {
-          person: {
-            id: "1",
-            father: { id: "2" }
-          }
-        }),
-        [["Person", "1", "father", "Person", "2"]]
-      );
-    });
-    it("extracts relationships for shallow list references", () => {
-      assert.deepEqual(
-        extractRelationships(mutation, {
-          person: {
-            id: "1",
-            products: [{ id: "2" }]
-          }
-        }),
-        [["Person", "1", "products", "Product", "2"]]
-      );
-    });
-    it("extracts relationshios from multiple items in a shllow list reference", () => {
-      assert.deepEqual(
-        extractRelationships(mutation, {
-          person: {
-            id: "1",
-            products: [{ id: "2" }, { id: "3" }]
-          }
-        }),
-        [
-          ["Person", "1", "products", "Product", "2"],
-          ["Person", "1", "products", "Product", "3"]
-        ]
-      );
-    });
-    it("extracts relationships from deep single reference", () => {
-      assert.deepEqual(
-        extractRelationships(mutation, {
-          person: {
-            id: "1",
-            favourite: {
-              id: "2",
-              owner: {
-                id: "3"
-              }
-            }
-          }
-        }),
-        [
-          ["Person", "1", "favourite", "Product", "2"],
-          ["Product", "2", "owner", "Person", "3"]
-        ]
-      );
-    });
-    it("extracts realtionships from deep list references", () => {
-      assert.deepEqual(
-        extractRelationships(mutation, {
-          person: {
-            id: "1",
-            products: [
-              {
-                id: "2",
-                owner: {
-                  id: "3"
-                }
-              },
-              {
-                id: "4",
-                owner: {
-                  id: "5"
-                }
-              }
-            ]
-          }
-        }),
-        [
-          ["Person", "1", "products", "Product", "2"],
-          ["Product", "2", "owner", "Person", "3"],
-          ["Person", "1", "products", "Product", "4"],
-          ["Product", "4", "owner", "Person", "5"]
-        ]
-      );
     });
   });
   describe("replaceFormulasAndFlatten", () => {

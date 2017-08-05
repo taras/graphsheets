@@ -14,6 +14,8 @@ import {
 import * as get from "lodash/fp/get";
 import * as has from "lodash/fp/has";
 import * as isEmpty from "lodash/fp/isEmpty";
+import extractRelationships from "../utils/extract-relationships";
+import { IGenericPayload, IRelationship } from "../Interfaces";
 
 const { isArray } = Array;
 
@@ -21,7 +23,7 @@ export default function createRecordResolver(
   spreadsheet: Spreadsheet,
   mutation: GraphQLField<string, any>
 ) {
-  return async function createRecord(_, payload: Payload) {
+  return async function createRecord(_, payload: IGenericPayload) {
     /**
      * Creating records quires IDs on each object. Here we will,
      * create recursively travers the payload and add ids to all
@@ -39,7 +41,7 @@ export default function createRecordResolver(
     let relationships = extractRelationships(
       mutation,
       withIds
-    ).map(([from, id, on, to, target]: Relationship) => {
+    ).map(([from, id, on, to, target]: IRelationship) => {
       return spreadsheet.createRelationship(from, id, on, to, target);
     });
 
@@ -47,9 +49,10 @@ export default function createRecordResolver(
       await Promise.all(relationships);
     }
 
-    let [root, ...nested] = replaceFormulasAndFlatten(mutation, withIds);
-
-    let created = [root, ...nested.reverse()].map(async ([type, data]) => {
+    let created = replaceFormulasAndFlatten(
+      mutation,
+      withIds
+    ).map(async ([type, data]) => {
       return spreadsheet.createRecord(type, data);
     });
 
@@ -64,7 +67,7 @@ type FlatPayload = [string, { [key: string]: any }];
 
 export function replaceFormulasAndFlatten(
   mutation: GraphQLField<string, any>,
-  payload: Payload
+  payload: IGenericPayload
 ): Array<FlatPayload> {
   return reduceMutationArguments(
     mutation,
@@ -156,65 +159,6 @@ export function relationshipFormula(
   return `=JOIN(",", QUERY(RELATIONSHIPS!A:F, "SELECT F WHERE B='${from}' AND C='${id}' AND D='${on}' and E='${to}'"))`;
 }
 
-type Relationship = [string, string, string, string, string];
-
-export function extractRelationships(
-  mutation: GraphQLField<string, any>,
-  payload: Payload
-): Array<Relationship> {
-  let { type } = mutation;
-  return reduceMutationArguments(
-    mutation,
-    (result, argName: string) => {
-      let root = get(argName, payload);
-      let output = type as GraphQLObjectType;
-
-      return [...result, ...typeTraverser(output, root)];
-    },
-    []
-  );
-}
-
-function typeTraverser(output: GraphQLObjectType, root): Array<Relationship> {
-  return reduceType(
-    output,
-    (
-      result,
-      fieldName: string,
-      type: GraphQLObjectType,
-      { isList, isObject }
-    ) => {
-      if (isList && has(fieldName, root)) {
-        return [
-          ...result,
-          ...get(fieldName, root).reduce((result, item) => {
-            return [
-              ...result,
-              [output.name, root.id, fieldName, type.name, item.id],
-              ...typeTraverser(type, item)
-            ];
-          }, [])
-        ];
-      }
-      if (isObject && has(fieldName, root)) {
-        return [
-          ...result,
-          [
-            output.name,
-            root.id,
-            fieldName,
-            type.name,
-            get(`${fieldName}.id`, root)
-          ],
-          ...typeTraverser(type, get(fieldName, root))
-        ];
-      }
-      return result;
-    },
-    []
-  );
-}
-
 export function injectIds(mutation, payload, actions) {
   return reduceMutationArguments(
     mutation,
@@ -231,15 +175,13 @@ export function injectIds(mutation, payload, actions) {
   );
 }
 
-type Payload = { [name: string]: any };
-
-type TraverserActions = {
+interface TraverserActions {
   generateId: () => string;
-};
+}
 
 function inputTraverser(
   inputType: GraphQLInputObjectType,
-  payload: Payload,
+  payload: IGenericPayload,
   actions: TraverserActions
 ) {
   return reduceInputObjectType(

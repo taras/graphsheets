@@ -1,0 +1,51 @@
+type Person {
+  id: ID!
+  name: String
+  products: [Product]
+  father: Person
+  favourite: Product
+}
+
+type Product {
+  id: ID!
+  title: String
+  alternative: Product
+  owner: Person
+}
+
+type Query {
+  persons: [Person]
+}
+
+input ProductInput {
+  id: ID
+  title: String
+  owner: PersonInput
+}
+
+input PersonInput {
+  id: ID
+  products: [ProductInput]
+  name: String
+  father: PersonInput
+  favourite: ProductInput
+}
+
+input UpdatePersonInput {
+  id: ID!
+  products: [UpdateProductInput]
+  name: String
+  father: UpdatePersonInput
+  favourite: UpdateProductInput
+}
+
+input UpdateProductInput {
+  id: ID!
+  title: String
+  owner: UpdatePersonInput
+}
+
+type Mutation {
+  createPerson(person: PersonInput): Person
+  updatePerson(person: UpdatePersonInput): Person
+}

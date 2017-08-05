@@ -22,3 +22,9 @@ export interface ISheetHeader {
   title: string;
   note?: string;
 }
+
+export interface IGenericPayload {
+  [name: string]: any;
+}
+
+export type IRelationship = [string, string, string, string, string];

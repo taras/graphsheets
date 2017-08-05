@@ -81,7 +81,7 @@ export function getTypeMap(schema: GraphQLSchema): TypeMap {
 /**
  * reduceMutation traverses a mutation and invokes a callback
  * for every property of each argument. It will return a single
- * value that's returned from the last invokation of the callback.
+ * value that's returned from the last invocation of the callback.
  */
 export function reduceMutationArguments(
   mutation: GraphQLField<string, any>,
