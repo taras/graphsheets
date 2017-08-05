@@ -37,3 +37,7 @@ export type IRelationshipTransformCallback = (
   fieldName: string,
   targetType: string
 ) => any;
+
+export interface IRecordParams {
+  [name: string]: string | number | null;
+}

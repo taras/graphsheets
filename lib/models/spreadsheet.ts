@@ -105,7 +105,8 @@ export default class Spreadsheet {
     type: string,
     props: { [name: string]: any }
   ): Promise<Record> {
-    let data = await this.connector.updateRecord(this.id, type, props);
+    let sheet = this.sheets[type];
+    let data = await this.connector.updateRecord(this.id, sheet, props);
 
     return new Record({ connector: this.connector, ...data });
   }

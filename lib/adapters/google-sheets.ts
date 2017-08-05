@@ -8,6 +8,7 @@ import spreadsheet from "../../test/fixtures/spreadsheet";
 import { IAuthorizer } from "../Interfaces";
 
 const { assign } = Object;
+const { isArray } = Array;
 export default class GoogleSheetsAdapter {
   private authorizer: IAuthorizer;
   private sheets;
@@ -41,6 +42,12 @@ export default class GoogleSheetsAdapter {
     return this.authorized(this.sheets.batchGet)(payload);
   }
 
+  async batchUpdate(
+    payload: BatchUpdateRequest
+  ): Promise<GoogleSheets.BatchUpdateResponse> {
+    return this.authorized(this.sheets.batchUpdate)(payload);
+  }
+
   async create(payload) {
     return this.authorized(this.sheets.create)(payload);
   }
@@ -50,7 +57,7 @@ export default class GoogleSheetsAdapter {
   }
 
   async query(options: IQueryParams): Promise<TableQuery.Response> {
-    let { spreadsheetId, sheet, ids, tqx } = options;
+    let { spreadsheetId, sheet, ids, tqx, tq } = options;
 
     let headers = {
       Authorization: this.authorizer.getAuthorizationHeader(),
@@ -62,8 +69,9 @@ export default class GoogleSheetsAdapter {
         headers: 1,
         sheet
       },
+      tq && { tq },
       ids && { tq: buildSQLQuery(ids) },
-      tqx && { tqx: tqx instanceof Array ? tqx.join(";") : tqx }
+      tqx && { tqx: isArray(tqx) ? tqx.join(";") : tqx }
     );
 
     return request
@@ -95,6 +103,7 @@ export interface IQueryParams {
   sheet: string;
   ids?: string[];
   tqx?: string[] | string;
+  tq?: string;
 }
 
 export interface AppendRequest {
@@ -105,6 +114,14 @@ export interface AppendRequest {
   responseValueRenderOption: GoogleSheets.ValueRenderOption;
   resource: GoogleSheets.ValueRange;
   valueInputOption: GoogleSheets.ValueInputOption;
+}
+
+export interface BatchUpdateRequest {
+  spreadsheetId: string;
+  data: GoogleSheets.ValueRange[];
+  includeValuesInResponse: boolean;
+  responseValueRenderOption: GoogleSheets.ValueRenderOption;
+  responseDateTimeRenderOption?: GoogleSheets.DateTimeRenderOption;
 }
 
 export namespace TableQuery {
@@ -153,6 +170,15 @@ export namespace GoogleSheets {
   export interface BatchGetResponse {
     spreadsheetId: string;
     valueRanges: ValueRange[];
+  }
+
+  export interface BatchUpdateResponse {
+    spreadsheetId: string;
+    totalUpdatedRows: number;
+    totalUpdatedColumns: number;
+    totalUpdatedCells: number;
+    totalUpdatedSheets: number;
+    response: GoogleSheets.UpdateValuesResponse[];
   }
 
   export interface ValueRange {

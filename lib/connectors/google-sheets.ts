@@ -8,6 +8,7 @@ import Sheet from "../models/sheet";
 import Spreadsheet from "../models/spreadsheet";
 import * as DataLoader from "dataloader";
 import * as zipObject from "lodash.zipobject";
+import { IRecordParams } from "../Interfaces";
 
 const { assign } = Object;
 
@@ -76,17 +77,11 @@ export default class GoogleSheetsConnector {
   async createRecord(
     spreadsheetId: string,
     sheet: Sheet,
-    params: { [name: string]: string | number | null }
+    record: IRecordParams
   ): Promise<{ [name: string]: any }> {
     let fieldNames = sheet.headers.map(({ title }) => title);
 
-    let values = fieldNames.map(fieldName => {
-      if (params.hasOwnProperty(fieldName)) {
-        return params[fieldName];
-      } else {
-        return null;
-      }
-    });
+    let row = recordToRow(fieldNames, record);
 
     let response = await this.api.append({
       spreadsheetId,
@@ -97,7 +92,7 @@ export default class GoogleSheetsConnector {
       responseValueRenderOption: "FORMATTED_VALUE",
       resource: {
         majorDimension: GoogleSheets.Dimension.ROWS,
-        values: [values],
+        values: [row],
         range: sheet.title
       }
     });
@@ -111,7 +106,7 @@ export default class GoogleSheetsConnector {
 
   createRelationship(spreadsheetId: string, relationship: Relationship) {
     let loader = this.ensureLoader(
-      "RELATIONSHIPS::write",
+      "RELATIONSHIPS::create",
       async (records: Array<Relationship>) => {
         let response = await this.api.append({
           spreadsheetId,
@@ -138,16 +133,63 @@ export default class GoogleSheetsConnector {
 
   async updateRecord(
     spreadsheetId: string,
-    type: string,
-    props: { [name: string]: any }
+    sheet: Sheet,
+    params: IRecordParams
   ): Promise<{ [name: string]: any }> {
-    let { id } = props;
+    let fieldNames = sheet.headers.map(({ title }) => title);
 
-    if (!id) {
-      throw new Error(`id is required to perform updateRecord`);
-    }
-    // TODO: implement
-    return {};
+    let loader = this.ensureLoader(
+      `${sheet.title}::update`,
+      async (records: Array<IRecordParams>) => {
+        // fetch the id column from the API so we can get row for each record
+        let ids = await this.api
+          .query({
+            spreadsheetId,
+            sheet: sheet.title,
+            tq: `SELECT A`
+          })
+          .then(response => deserializeTableQueryResponse(response))
+          .then(records => records.map(({ id }) => id));
+
+        type RecordWithRows = [number, IRecordParams];
+
+        let indexedRecords = records.map(record => {
+          let { id } = record;
+          let index = ids.indexOf(id);
+          if (index === -1) {
+            throw new Error(
+              `Update failed: ${sheet.title} does not have record with id ${id}`
+            );
+          } else {
+            /**
+             * Increase index by one because rows start from 1 and 1 is header.
+             * header is excluded by the query, so 1st row of data is actually 0 + 2.
+             */
+            return [index + 2, record];
+          }
+        });
+
+        let { response } = await this.api.batchUpdate({
+          spreadsheetId,
+          includeValuesInResponse: true,
+          responseValueRenderOption: "FORMATTED_VALUE",
+          data: indexedRecords.map(([index, record]) => {
+            let row = recordToRow(fieldNames, record);
+            return {
+              range: `A{row}:ZZ{row}`,
+              majorDimension: GoogleSheets.Dimension.ROWS,
+              values: [row]
+            };
+          })
+        });
+
+        return response.map(({ updatedData }) =>
+          zipObject(relationshipFields, updatedData)
+        );
+      }
+    );
+
+    return loader.load(params);
   }
 
   async deleteRecord(
@@ -203,6 +245,16 @@ export default class GoogleSheetsConnector {
     }
     return loader;
   }
+}
+
+export function recordToRow(fieldNames, record) {
+  return fieldNames.map(fieldName => {
+    if (record.hasOwnProperty(fieldName)) {
+      return record[fieldName];
+    } else {
+      return null;
+    }
+  });
 }
 
 type Relationship = [string, string, string, string];
