@@ -1,4 +1,4 @@
-## GraphSheets
+## GraphSheets [![Build Status](https://www.travis-ci.org/this-dot/graphsheets.svg?branch=master)](https://www.travis-ci.org/this-dot/graphsheets)
 
 ## Schema Conversion
 
