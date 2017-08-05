@@ -16,6 +16,7 @@ import * as has from "lodash/fp/has";
 import * as isEmpty from "lodash/fp/isEmpty";
 import extractRelationships from "../utils/extract-relationships";
 import { IGenericPayload, IRelationship } from "../Interfaces";
+import replaceFormulasAndFlatten from "../utils/replace-formulas-and-flatten";
 
 const { isArray } = Array;
 
@@ -61,102 +62,6 @@ export default function createRecordResolver(
       return root;
     }
   };
-}
-
-type FlatPayload = [string, { [key: string]: any }];
-
-export function replaceFormulasAndFlatten(
-  mutation: GraphQLField<string, any>,
-  payload: IGenericPayload
-): Array<FlatPayload> {
-  return reduceMutationArguments(
-    mutation,
-    (result: Array<FlatPayload>, argName: string) => {
-      let root = payload[argName];
-      let output = mutation.type as GraphQLObjectType;
-      let { isList, isObject } = buildObjectTypeParams(output);
-
-      if (isObject) {
-        return [...result, ...flattenReference(output, root)];
-      }
-    },
-    []
-  );
-}
-
-export function flattenReference(output, root) {
-  return reduceType(
-    output,
-    (
-      result,
-      fieldName: string,
-      type: GraphQLNamedType,
-      { isScalar, isList, isObject }
-    ) => {
-      let value = root[fieldName];
-      if (isObject && has(fieldName, root)) {
-        if (isList) {
-          if (isArray(value)) {
-            return [
-              ...result,
-              ...value.reduce(
-                (result, item) => [...result, ...flattenReference(type, item)],
-                []
-              )
-            ];
-          } else {
-            return result;
-          }
-        } else {
-          return [...result, ...flattenReference(type, value)];
-        }
-      }
-      return result;
-    },
-    [
-      [
-        output.name,
-        reduceType(
-          output,
-          (
-            result,
-            fieldName: string,
-            type: GraphQLNamedType,
-            { isList, isObject }
-          ) => {
-            if (isObject) {
-              return {
-                ...result,
-                [fieldName]: relationshipFormula(
-                  output.name,
-                  root.id,
-                  fieldName,
-                  type.name
-                )
-              };
-            }
-            if (has(fieldName, root)) {
-              return {
-                ...result,
-                [fieldName]: get(fieldName, root)
-              };
-            } else {
-              return result;
-            }
-          }
-        )
-      ]
-    ]
-  );
-}
-
-export function relationshipFormula(
-  from: string,
-  id: string,
-  on: string,
-  to: string
-) {
-  return `=JOIN(",", QUERY(RELATIONSHIPS!A:F, "SELECT F WHERE B='${from}' AND C='${id}' AND D='${on}' and E='${to}'"))`;
 }
 
 export function injectIds(mutation, payload, actions) {

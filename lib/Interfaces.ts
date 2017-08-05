@@ -28,3 +28,5 @@ export interface IGenericPayload {
 }
 
 export type IRelationship = [string, string, string, string, string];
+
+export type IFlatPayload = [string, { [key: string]: any }];
