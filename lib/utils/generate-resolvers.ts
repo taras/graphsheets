@@ -23,7 +23,6 @@ import {
   GraphQLObjectType
 } from "graphql";
 import createRecordResolver from "../resolvers/create";
-import updateRecordResolver from "../resolvers/update";
 
 const { assign, keys } = Object;
 
@@ -68,11 +67,6 @@ export function generateMutationResolvers(
           .../^create(.*)$/.test(mutationName)
             ? {
                 [mutationName]: createRecordResolver(spreadsheet, mutation)
-              }
-            : {},
-          .../^update(.*)$/.test(mutationName)
-            ? {
-                [mutationName]: updateRecordResolver(spreadsheet, mutation)
               }
             : {}
         };
