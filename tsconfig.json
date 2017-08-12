@@ -7,5 +7,6 @@
     "alwaysStrict": true,
     "lib": ["es2016", "es2017"]
   },
-  "exclude": ["node_modules"]
+  "exclude": ["node_modules"],
+  "compileOnSave": true
 }
