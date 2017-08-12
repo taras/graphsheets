@@ -36,7 +36,7 @@ export default class GoogleAuthorizer implements Authorizer {
     try {
       token = readJSONSync(tokenPath);
     } catch (e) {
-      console.error(`Count not read token file at ${tokenPath}`);
+      console.error(`Could not read token file at ${tokenPath}`);
     }
 
     if (token) {
@@ -60,7 +60,7 @@ export default class GoogleAuthorizer implements Authorizer {
     try {
       credentials = await this.getToken(code);
     } catch (e) {
-      console.error(`Count not fetch token with code: ${code}`);
+      console.error(`Could not fetch token with code: ${code}`);
       throw e;
     }
 
