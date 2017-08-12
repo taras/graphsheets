@@ -1,3 +1,4 @@
+import * as yargs from "yargs";
 import authorize from "./commands/authorize";
 import newCommand from "./commands/new";
 import serverCommand from "./commands/server";
@@ -42,5 +43,11 @@ require("yargs")
   .option("verbose", {
     alias: "v",
     default: false
+  })
+  .command({
+    command: "*",
+    handler() {
+      yargs.showHelp();
+    }
   })
   .help().argv;
