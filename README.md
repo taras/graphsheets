@@ -37,8 +37,8 @@ This should create a spreadsheet that has 2 Sheets
 
 ## Setup
 
-- Follow the [official Google Sheets API instructions](https://developers.google.com/sheets/api/quickstart/nodejs#step_1_turn_on_the_api_name) to get the `client_secret.json` file required by this app.
-
+* Follow the [official Google Sheets API instructions](https://developers.google.com/sheets/api/quickstart/nodejs#step_1_turn_on_the_api_name) to get the `client_secret.json` file required by this app.
+* Run `./bin/graphsheets authorize` to authorize this client to view & manage your spreadsheets.
 
 ## Resources
 
