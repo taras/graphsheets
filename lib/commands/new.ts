@@ -36,15 +36,15 @@ export default asyncCommand({
 
     let sheet = <any>await sheets.create(basicSheets(title));
 
-    let { spreadsheetUrl, spreadsheetId } = sheet;
+    let { url, id } = sheet;
 
     writeJSONSync(path.join(process.cwd(), "spreadsheet.json"), {
-      url: spreadsheetUrl,
-      id: spreadsheetId
+      url,
+      id
     });
 
     console.info(`
-    👍  your database was created at ${spreadsheetUrl}
+    👍  your database was created at ${url}
 
     This information was also saved to spreadsheet.json.
     `);

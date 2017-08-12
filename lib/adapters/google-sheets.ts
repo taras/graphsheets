@@ -49,7 +49,7 @@ export default class GoogleSheetsAdapter {
     return this.authorized(this.sheets.values.append)(payload);
   }
 
-  async query(options: IQueryParams): Promise<TableQuery.Response> {
+  async query(options: QueryParams): Promise<TableQuery.Response> {
     let { spreadsheetId, sheet, ids, tqx } = options;
 
     let headers = {
@@ -90,7 +90,7 @@ export function buildSQLQuery(ids: string[]) {
   return `SELECT * WHERE ${where}`;
 }
 
-export interface IQueryParams {
+export interface QueryParams {
   spreadsheetId: string;
   sheet: string;
   ids?: string[];

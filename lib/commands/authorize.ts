@@ -1,3 +1,4 @@
+import GoogleClientConfig from "../models/google-client-config";
 import fs = require("fs-extra");
 import path = require("path");
 
@@ -19,7 +20,9 @@ export default asyncCommand({
   async handler(argv) {
     let { readOnly, tokenPath, clientSecretPath } = argv;
 
-    let authorizer = GoogleAuthorizer.restore(clientSecretPath, tokenPath);
+    let authorizer = GoogleAuthorizer.restore(
+      GoogleClientConfig.initFromFiles(clientSecretPath, tokenPath)
+    );
 
     if (authorizer.isAuthorized) {
       console.info(`Retrieved a token from ${tokenPath}`);
@@ -30,7 +33,7 @@ export default asyncCommand({
 
       let code = await ask("Enter the code from that page here: ");
 
-      let credentials = authorizer.authorize(code);
+      let credentials = await authorizer.authorize(code);
 
       try {
         writeJSONSync(tokenPath, credentials);

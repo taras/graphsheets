@@ -1,5 +1,5 @@
+import GoogleClientConfig from "./models/google-client-config";
 import googleAuth = require("google-auth-library");
-import readJSONSync from "./utils/read-json";
 import { Authorizer } from "./Interfaces";
 
 const { assign } = Object;
@@ -9,38 +9,23 @@ export default class GoogleAuthorizer implements Authorizer {
   public isAuthorized: boolean;
 
   /**
-   * Instantiate an authorizer from client_secret.json and token json
-   * @param clientSecretPath string
-   * @param tokenPath string
+   * Instantiate an authorizer from a googleClientConfig
+   * 
+   * @static
+   * @param {GoogleClientConfig} googleClientConfig 
+   * @returns {GoogleAuthorizer} 
+   * @memberof GoogleAuthorizer
    */
-  static restore(clientSecretPath, tokenPath): GoogleAuthorizer {
-    let clientSecret;
-    try {
-      clientSecret = readJSONSync(clientSecretPath);
-    } catch (e) {
-      // TODO: Add a link to the docs on obtaining a Google api `client_secret.json` file.
-      console.error(
-        `Could not read client_secret.json at ${clientSecretPath}.`
-      );
-      throw e;
-    }
+  static restore(googleClientConfig: GoogleClientConfig): GoogleAuthorizer {
+    const auth = new googleAuth();
+    let client = new auth.OAuth2(
+      googleClientConfig.clientId,
+      googleClientConfig.clientSecret,
+      googleClientConfig.redirectURLS
+    );
 
-    let {
-      installed: { client_secret, client_id, redirect_uris: [redirectUrl] }
-    } = clientSecret;
-
-    let auth = new googleAuth();
-    let client = new auth.OAuth2(client_id, client_secret, redirectUrl);
-
-    let token;
-    try {
-      token = readJSONSync(tokenPath);
-    } catch (e) {
-      console.error(`Could not read token file at ${tokenPath}`);
-    }
-
-    if (token) {
-      client.credentials = token;
+    if (googleClientConfig.credentials) {
+      client.credentials = googleClientConfig.credentials;
     }
 
     return new GoogleAuthorizer(client);
@@ -48,7 +33,7 @@ export default class GoogleAuthorizer implements Authorizer {
 
   constructor(client) {
     this.client = client;
-    this.isAuthorized = !!client.credentials;
+    this.isAuthorized = !!client.credentials["access_token"];
   }
 
   /**
@@ -122,7 +107,11 @@ export default class GoogleAuthorizer implements Authorizer {
       {
         auth: this.client
       },
-      payload
+      {
+        resource: {
+          ...payload
+        }
+      }
     );
   }
 
