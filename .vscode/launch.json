@@ -7,10 +7,10 @@
     {
       "type": "node",
       "request": "launch",
-      "name": "Launch Program",
-      "program": "${workspaceRoot}/lib/cli.js",
-      "outFiles": [
-        "${workspaceRoot}/out/**/*.js"
+      "name": "New command",
+      "program": "${workspaceRoot}/bin/graphsheets",
+      "args": [
+        "new", "this-dot-javascript-podcast"
       ]
     }
   ]
