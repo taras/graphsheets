@@ -10,8 +10,16 @@
       "name": "New command",
       "program": "${workspaceRoot}/bin/graphsheets",
       "args": [
-        "new", "this-dot-javascript-podcast"
+        "new", 
+        "this-dot-javascript-podcast"
       ]
+    }, {
+      "type": "node",
+      "request": "launch",
+      "name": "Authorize command",
+      "program": "${workspaceRoot}/bin/graphsheets",
+      "args": [ "authorize" ],
+      "console": "externalTerminal"
     }
   ]
 }
