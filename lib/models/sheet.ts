@@ -1,7 +1,7 @@
 import GoogleSheetsConnector from "../connectors/google-sheets";
 import toNotationMap from "../utils/notation";
 import Spreadsheet from "./spreadsheet";
-import { ISheetHeader } from "../Interfaces";
+import { SheetHeader } from "../Interfaces";
 
 const { assign } = Object;
 
@@ -13,7 +13,7 @@ export default class Sheet {
   public index: string;
   public hidden: boolean;
   public spreadsheet: Spreadsheet;
-  public headers: ISheetHeader[];
+  public headers: SheetHeader[];
   public rowCount: number;
   public columnCount: number;
 

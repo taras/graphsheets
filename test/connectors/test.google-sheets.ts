@@ -8,7 +8,7 @@ import {
   extractHeaders,
   parseValue
 } from "../../lib/connectors/google-sheets";
-import { IAuthorizer } from "../../lib/Interfaces";
+import { Authorizer } from "../../lib/Interfaces";
 import Sheet from "../../lib/models/sheet";
 import Spreadsheet from "../../lib/models/spreadsheet";
 import spreadsheetFixture from "./../fixtures/spreadsheet";
@@ -16,7 +16,7 @@ import tableQueryFixture from "./../fixtures/table-query";
 
 describe("connectors/google-sheets", () => {
   describe("load", () => {
-    class StubAuthorizer implements IAuthorizer {
+    class StubAuthorizer implements Authorizer {
       public isAuthorized = true;
 
       authorizeRequest(payload) {

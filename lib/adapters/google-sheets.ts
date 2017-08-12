@@ -5,14 +5,14 @@ import request = require("request-promise-native");
 const { spreadsheets } = google.sheets("v4");
 
 import spreadsheet from "../../test/fixtures/spreadsheet";
-import { IAuthorizer } from "../Interfaces";
+import { Authorizer } from "../Interfaces";
 
 const { assign } = Object;
 export default class GoogleSheetsAdapter {
-  private authorizer: IAuthorizer;
+  private authorizer: Authorizer;
   private sheets;
 
-  constructor(authorizer: IAuthorizer) {
+  constructor(authorizer: Authorizer) {
     this.authorizer = authorizer;
     this.sheets = spreadsheets;
   }

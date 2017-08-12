@@ -1,9 +1,9 @@
-import { IRelationship } from "../Interfaces";
+import { Relationship } from "../Interfaces";
 
 export type RelationshipField = [string, string, string];
 
 export default function uniqueRelationships(
-  relationships: Array<IRelationship>
+  relationships: Array<Relationship>
 ) {
   return relationships.reduce((seen, item) => {
     let [from, id, on, to] = item;

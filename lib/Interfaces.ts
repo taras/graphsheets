@@ -1,4 +1,4 @@
-export interface IAuthorizer {
+export interface Authorizer {
   /**
    * Use to check if this authorizer has credentials
    * to make requests to the service
@@ -14,17 +14,17 @@ export interface IAuthorizer {
   getAuthorizationHeader: () => string;
 }
 
-export interface IFetchHeadersResult {
+export interface FetchHeadersResult {
   [name: string]: string[];
 }
 
-export interface ISheetHeader {
+export interface SheetHeader {
   title: string;
   note?: string;
 }
 
-export interface IGenericPayload {
+export interface GenericPayload {
   [name: string]: any;
 }
 
-export type IRelationship = [string, string, string, string, string];
+export type Relationship = [string, string, string, string, string];

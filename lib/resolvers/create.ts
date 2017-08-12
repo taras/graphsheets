@@ -15,7 +15,7 @@ import * as get from "lodash/fp/get";
 import * as has from "lodash/fp/has";
 import * as isEmpty from "lodash/fp/isEmpty";
 import extractRelationships from "../utils/extract-relationships";
-import { IGenericPayload, IRelationship } from "../Interfaces";
+import { GenericPayload, Relationship } from "../Interfaces";
 
 const { isArray } = Array;
 
@@ -23,7 +23,7 @@ export default function createRecordResolver(
   spreadsheet: Spreadsheet,
   mutation: GraphQLField<string, any>
 ) {
-  return async function createRecord(_, payload: IGenericPayload) {
+  return async function createRecord(_, payload: GenericPayload) {
     /**
      * Creating records quires IDs on each object. Here we will,
      * create recursively travers the payload and add ids to all
@@ -41,7 +41,7 @@ export default function createRecordResolver(
     let relationships = extractRelationships(
       mutation,
       withIds
-    ).map(([from, id, on, to, target]: IRelationship) => {
+    ).map(([from, id, on, to, target]: Relationship) => {
       return spreadsheet.createRelationship(from, id, on, to, target);
     });
 
@@ -67,7 +67,7 @@ type FlatPayload = [string, { [key: string]: any }];
 
 export function replaceFormulasAndFlatten(
   mutation: GraphQLField<string, any>,
-  payload: IGenericPayload
+  payload: GenericPayload
 ): Array<FlatPayload> {
   return reduceMutationArguments(
     mutation,
@@ -181,7 +181,7 @@ interface TraverserActions {
 
 function inputTraverser(
   inputType: GraphQLInputObjectType,
-  payload: IGenericPayload,
+  payload: GenericPayload,
   actions: TraverserActions
 ) {
   return reduceInputObjectType(

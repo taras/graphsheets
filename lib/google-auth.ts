@@ -1,9 +1,9 @@
 import googleAuth = require("google-auth-library");
 import readJSONSync from "./utils/read-json";
-import { IAuthorizer } from "./Interfaces";
+import { Authorizer } from "./Interfaces";
 
 const { assign } = Object;
-export default class GoogleAuthorizer implements IAuthorizer {
+export default class GoogleAuthorizer implements Authorizer {
   private client;
 
   public isAuthorized: boolean;

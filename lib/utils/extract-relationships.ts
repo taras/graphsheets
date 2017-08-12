@@ -1,4 +1,4 @@
-import { IGenericPayload, IRelationship } from "../Interfaces";
+import { GenericPayload, Relationship } from "../Interfaces";
 import { GraphQLField, GraphQLObjectType } from "graphql";
 import { reduceMutationArguments, reduceType } from "./type-map-utils";
 import * as has from "lodash/fp/has";
@@ -6,8 +6,8 @@ import * as get from "lodash/fp/get";
 
 export default function extractRelationships(
   mutation: GraphQLField<string, any>,
-  payload: IGenericPayload
-): Array<IRelationship> {
+  payload: GenericPayload
+): Array<Relationship> {
   let { type } = mutation;
   return reduceMutationArguments(
     mutation,
@@ -21,7 +21,7 @@ export default function extractRelationships(
   );
 }
 
-function typeTraverser(output: GraphQLObjectType, root): Array<IRelationship> {
+function typeTraverser(output: GraphQLObjectType, root): Array<Relationship> {
   return reduceType(
     output,
     (
