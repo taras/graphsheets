@@ -35,6 +35,11 @@ This should create a spreadsheet that has 2 Sheets
 =JOIN(",", QUERY(Products, "select "&SUBSTITUTE(ADDRESS(1,MATCH("ID",INDEX(Products, 1),0),4),1,"")&" where "&SUBSTITUTE(ADDRESS(1,MATCH("Owner",INDEX(Products, 1),0),4),1,"")&" matches 2 label "&SUBSTITUTE(ADDRESS(1,MATCH("ID",INDEX(Products, 1),0),4),1,"")&" ''"))
 ```
 
+## Setup
+
+- Follow the [official Google Sheets API instructions](https://developers.google.com/sheets/api/quickstart/nodejs#step_1_turn_on_the_api_name) to get the `client_secret.json` file required by this app.
+
+
 ## Resources
 
 ### GraphQL

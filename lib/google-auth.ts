@@ -18,7 +18,10 @@ export default class GoogleAuthorizer implements Authorizer {
     try {
       clientSecret = readJSONSync(clientSecretPath);
     } catch (e) {
-      console.error(`Could not read client_secret.json at ${clientSecretPath}`);
+      // TODO: Add a link to the docs on obtaining a Google api `client_secret.json` file.
+      console.error(
+        `Could not read client_secret.json at ${clientSecretPath}.`
+      );
       throw e;
     }
 

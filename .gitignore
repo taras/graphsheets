@@ -4,3 +4,4 @@ dist
 yarn-error.log
 *.js
 *.js.map
+client_secret.json
