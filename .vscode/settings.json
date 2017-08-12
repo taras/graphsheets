@@ -1,4 +1,3 @@
-// Place your settings in this file to overwrite default and user settings.
 {
   "editor.formatOnSave": true,
   "files.exclude": {
@@ -9,5 +8,6 @@
     "**/.vscode": true,
     "**/*.js": true,
     "**/*.map": true
-  }
+  },
+  "eslint.enable": false
 }
